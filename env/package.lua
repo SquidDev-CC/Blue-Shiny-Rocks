@@ -1,12 +1,7 @@
---- Checks an argument has the correct type
--- @param arg The argument to check
--- @tparam string argType The type that it should be
-local function checkType(arg, argType)
-	local t = type(arg)
-	if t ~= argType then
-		error("Expected " .. argType .. ", got " .. t, 3)
-	end
-end
+--- The main package library - a pure lua reimplementation of the package library in lua
+-- See: http://www.lua.org/manual/5.1/manual.html#5.3
+
+local checkType = utils.checkType
 
 return function(env)
 	local _G = env._G
@@ -65,13 +60,8 @@ return function(env)
 					start = len + 1
 				end
 
-				local filePath = path:sub(pos, start - 1):gsub("%?", name, 1)
+				local filePath = env.resolve(path:sub(pos, start - 1):gsub("%?", name, 1))
 				pos = start + 1
-
-				-- Support local paths
-				if filePath:sub(1, 1) ~= "/" then
-					filePath = fs.combine(filePath, env.dir)
-				end
 
 				local loaded, err = loadfile(filePath)
 				if type(loaded) == "function" then
