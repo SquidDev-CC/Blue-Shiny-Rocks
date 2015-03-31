@@ -193,8 +193,7 @@ return function(env)
 
 	local temp = {}
 	function io.tmpfile(file)
-		-- Pretty safe, though not 100% accurate
-		return loadFile("/tmp-" .. os.clock() .. "-" .. math.random(1, 2^32))
+		return loadFile(utils.tmpName())
  	end
 
  	function io.type(file)

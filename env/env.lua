@@ -93,8 +93,10 @@ return function()
 	end
 
 	-- Setup other items
-	package(env)
 	io(env)
+	os(env)
+
+	package(env)
 
 	return env
 end

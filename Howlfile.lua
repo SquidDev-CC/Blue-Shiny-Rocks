@@ -8,8 +8,7 @@ Sources:File "utils.lua"
 do -- Minification
 	Sources:File "env/env.lua"
 		:Name "env"
-		:Depends "io"
-		:Depends "package"
+		:Depends {"io", "package", "os"}
 
 	Sources:File "env/package.lua"
 		:Name "package"
@@ -17,6 +16,10 @@ do -- Minification
 
 	Sources:File "env/io.lua"
 		:Name "io"
+		:Depends "utils"
+
+	Sources:File "env/os.lua"
+		:Name "os"
 		:Depends "utils"
 end
 

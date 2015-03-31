@@ -8,3 +8,8 @@ function checkType(arg, argType)
 	end
 	return args
 end
+
+-- Pretty safe, though not 100% accurate
+function tmpName()
+	return "/tmp-" .. os.clock() .. "-" .. math.random(1, 2^32)
+end
