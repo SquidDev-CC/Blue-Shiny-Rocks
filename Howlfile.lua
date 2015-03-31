@@ -1,14 +1,14 @@
 Options:Default "trace"
 
 Sources:Main "runner.lua"
-	:Depends "env"
+	:Depends {"env", "utils"}
 
 Sources:File "utils.lua"
 	:Name "utils"
 do -- Minification
 	Sources:File "env/env.lua"
 		:Name "env"
-		:Depends {"io", "package", "os"}
+		:Depends {"debug", "io", "package", "os"}
 
 	Sources:File "env/package.lua"
 		:Name "package"
@@ -20,6 +20,10 @@ do -- Minification
 
 	Sources:File "env/os.lua"
 		:Name "os"
+		:Depends "utils"
+
+	Sources:File "env/debug.lua"
+		:Name "debug"
 		:Depends "utils"
 end
 

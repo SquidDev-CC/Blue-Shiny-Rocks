@@ -4,7 +4,7 @@
 local checkType = utils.checkType
 
 return function(env)
-	local os, shell = os, shell
+	local os, shell = _G.os, _G.shell
 	env._G.os = {
 		clock = os.clock,
 		date = function(format, time)
@@ -32,10 +32,10 @@ return function(env)
 
 		remove = function(path)
 			return pcall(fs.delete, env.resolve(checkType(path, "string")))
-		end
+		end,
 		rename = function(oldname, newname)
 			return pcall(fs.rename, env.resolve(checkType(oldname, "string")), env.resolve(checkType(newname, "string")))
-		end
+		end,
 		setlocale = function() end,
 		-- Technically not
 		time  = os.time,

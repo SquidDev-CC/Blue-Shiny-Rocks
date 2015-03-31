@@ -15,16 +15,16 @@ local function checkFile(file)
 end
 
 local function getHandle(file)
-	local t = type(self)
-	if t ~= "table" or not self.__handle then
+	local t = type(file)
+	if t ~= "table" or not file.__handle then
 		error("FILE* expected, got " .. t)
 	end
 
-	if self.__isClosed then
+	if file.__isClosed then
 		error("attempt to use closed file", 3)
 	end
 
-	return self.__handle
+	return file.__handle
 end
 
 local fileMeta = {

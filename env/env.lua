@@ -1,5 +1,6 @@
-return function()
+return function(options)
 	local globals = _G
+	options = options or {}
 
 	local nImplemented = function(name)
 		return function()
@@ -36,7 +37,7 @@ return function()
 
 	-- Copy functions across
 	for k,v in pairs(globals) do
-		if type(v) == "function" then
+		if not _G[k] then
 			_G[k] = v
 		end
 	end
@@ -79,7 +80,7 @@ return function()
 	end
 
 	function _G.print(...)
-		local out = stdout
+		local out = env.stdout
 		local tostring = _G.tostring -- Allow overriding
 		local t = {...}
 		for i = 1, select('#', ...) do
@@ -95,6 +96,10 @@ return function()
 	-- Setup other items
 	io(env)
 	os(env)
+
+	if options.debug then
+		debug(env)
+	end
 
 	package(env)
 

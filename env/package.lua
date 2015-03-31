@@ -9,7 +9,7 @@ return function(env)
 	local package = {
 		loaded = {},
 		preload = {},
-		path = shell.path():gsub(":", ";"),
+		path = shell.path():gsub(":", "/?;") .. "/?",
 	}
 	-- Set as a global
 	_G.package = package
@@ -97,9 +97,9 @@ return function(env)
 		for _, loader in ipairs(loaders) do
 			thisPackage = loader(name)
 
-			local lType = type(loader)
+			local lType = type(thisPackage)
 			if lType == "string" then
-				errs[#errs + 1] = lType
+				errs[#errs + 1] = thisPackage
 			elseif lType == "function" then
 				-- Prevent cyclic dependencies
 				loaded[name] = false
@@ -125,7 +125,7 @@ return function(env)
 		end
 
 		-- Can't find it - just error
-		error("module '" .. name .. "' not found: " .. name .. table.concat(errs))
+		error("module '" .. name .. "' not found: " .. name .. table.concat(errs, ""))
 	end
 
 	-- Find the name of a table
