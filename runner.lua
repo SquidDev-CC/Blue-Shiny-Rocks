@@ -1,4 +1,5 @@
 local function load(file, ...)
+	assert(file and fs.exists(shell.resolve(file)), "Cannot find file " .. (file or "<nil>"))
 	local loaded, msg = env()._G.loadfile(file)
 	if not loaded then error(msg, 0) end
 

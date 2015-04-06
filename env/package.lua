@@ -64,6 +64,11 @@ return function(env)
 				pos = start + 1
 
 				local loaded, err = loadfile(filePath)
+
+				if not fs.exists(filePath) then
+					loaded, err = loadfile(filePath .. ".lua")
+				end
+
 				if type(loaded) == "function" then
 					return setfenv(loaded, _G)
 				end
@@ -135,12 +140,12 @@ return function(env)
 	local function findTable(table, name)
 		local pos, len = 1, #name
 		while pos <= len do
-			local start = name:find(".", pos)
+			local start = name:find(".", pos, true)
 			if not start then
 				start = len + 1
 			end
 
-			local key = path:sub(pos, start - 1)
+			local key = name:sub(pos, start - 1)
 			pos = start + 1
 
 			local val = rawget(table, key)
@@ -154,8 +159,9 @@ return function(env)
 			else
 				return nil
 			end
-
 		end
+
+		return table
 	end
 
 	-- Set the current env to be a module

@@ -121,7 +121,7 @@ return function(env)
 					local c = term.isColor()
 					if c then term.setTextColor(colors.red) end
 					write(arg)
-					if c then term.setTextColor(colors.black) end
+					if c then term.setTextColor(colors.white) end
 				end,
 			}
 		}, fileMeta)
@@ -135,6 +135,10 @@ return function(env)
 				write = function() error("cannot write to input", 3) end,
 			}
 		}, fileMeta)
+
+		io.stdout = env.stdout
+		io.stderr = env.stderr
+		io.stdin  = env.stdin
 	end
 
 	function io.close(file)

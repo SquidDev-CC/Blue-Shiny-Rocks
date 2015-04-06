@@ -97,7 +97,7 @@ return function(options)
 	io(env)
 	os(env)
 
-	if options.debug then
+	if options.debug ~= false then
 		debug(env)
 	end
 
