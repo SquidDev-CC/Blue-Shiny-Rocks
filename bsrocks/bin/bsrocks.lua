@@ -22,6 +22,7 @@ addCommand(require "bsrocks.commands.search")
 addCommand(require "bsrocks.commands.fetch")
 addCommand(require "bsrocks.commands.makepatches")
 addCommand(require "bsrocks.commands.applypatches")
+addCommand(require "bsrocks.commands.exec")
 
 addCommand({
 	name = "help",
@@ -34,7 +35,7 @@ addCommand({
 			print("  " .. command.name .. " " .. command.syntax)
 			printColoured("    " .. command.help, colours.lightGrey)
 		end
-	end
+	end,
 })
 
 -- Default to printing help messages
