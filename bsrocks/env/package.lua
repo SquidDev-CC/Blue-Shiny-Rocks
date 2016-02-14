@@ -1,6 +1,7 @@
 --- The main package library - a pure lua reimplementation of the package library in lua
 -- See: http://www.lua.org/manual/5.1/manual.html#5.3
 
+local utils = require "bsrocks.lib.utils"
 local checkType = utils.checkType
 
 return function(env)

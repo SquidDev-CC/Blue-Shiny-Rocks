@@ -2,6 +2,7 @@
 -- See: http://www.lua.org/manual/5.1/manual.html#5.7
 -- Some elements are duplicated in /rom/apis/io but this is a more accurate representation
 
+local utils = require "bsrocks.lib.utils"
 local checkType = utils.checkType
 
 local function isFile(file)

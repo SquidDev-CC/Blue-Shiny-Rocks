@@ -1,6 +1,7 @@
 --- Pure lua implementation of the OS api
 -- http://www.lua.org/manual/5.1/manual.html#5.8
 
+local utils = require "bsrocks.lib.utils"
 local checkType = utils.checkType
 
 return function(env)

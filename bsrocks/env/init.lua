@@ -93,6 +93,39 @@ return function(options)
 		out:write("\n")
 	end
 
+	local errors = {}
+	local function extractError(...)
+		local success, message = ...
+		if success then
+			return ...
+		else
+			local result = errors[message] or message
+			errors[message] = nil
+			return false, result
+		end
+	end
+
+	function _G.error(message, level)
+		level = level or 1
+		if level > 0 then level = level + 1 end
+
+		if type(message) ~= "string" then
+			local key = tostring({}) .. tostring(message)
+			errors[key] = message
+			error(key, 0)
+		else
+			error(message, level)
+		end
+	end
+
+	function _G.pcall(func, ...)
+		return extractError(pcall(func, ...))
+	end
+
+	function _G.xpcall(func, handler)
+		return xpcall(func, function(result) return handler(extractError(result)) end)
+	end
+
 	-- Setup other items
 	require "bsrocks.env.io"(env)
 	require "bsrocks.env.os"(env)
@@ -101,7 +134,7 @@ return function(options)
 		require "bsrocks.env.debug"(env)
 	end
 
-	require "bsrocks.env.package".package(env)
+	require "bsrocks.env.package"(env)
 
 	return env
 end

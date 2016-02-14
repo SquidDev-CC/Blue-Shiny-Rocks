@@ -1,6 +1,7 @@
 --- Tiny ammount of the debug API
 -- http://www.lua.org/manual/5.1/manual.html#5.9
 
+local traceback = require "bsrocks.lib.utils".traceback
 local function err(name)
 	return function() error(name .. " not implemented", 2) end
 end
@@ -57,7 +58,7 @@ return function(env)
 		setlocal = err("setlocal"),
 		setmetatable = setmetatable,
 		setupvalue = err("setupvalue"),
-		traceback = utils.traceback,
+		traceback = traceback,
 	}
 	env._G.debug = debug
 end
