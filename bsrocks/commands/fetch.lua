@@ -1,5 +1,7 @@
 local repo = require "bsrocks.rocks.repository"
 local download = require "bsrocks.downloaders"
+local serialize = require "bsrocks.lib.serialize"
+local fileWrapper = require "bsrocks.lib.files"
 
 local function execute(name, version)
 	if not name then error("Expected name", 0) end
@@ -24,16 +26,31 @@ local function execute(name, version)
 
 	local downloaded = download(rockspec.source, files)
 
-	if not downloaded then error("Cannot find downloader for " .. rockspec.source.url) end
+	if not downloaded then error("Cannot find downloader for " .. rockspec.source.url, 0) end
 	print()
 
-	repo.saveFiles(rockspec, downloaded, shell.resolve("rocks-original/" .. name))
-	repo.saveFiles(rockspec, downloaded, shell.resolve("rocks-changes/" .. name))
+	local dir = shell.resolve("rocks-original/" .. name)
+	for name, contents in pairs(downloaded) do
+		fileWrapper.write(fs.combine(dir, name), contents)
+	end
+
+	fs.delete(shell.resolve("rocks-changes/" .. name))
+
+	local info = shell.resolve("rocks/" .. name .. "/info.lua")
+	local data = {}
+	if fs.exists(info) then
+		data = serialize.unserialize(fileWrapper.read(info))
+	end
+
+	data.version = version
+	fileWrapper.write(info, serialize.serialize(data))
+
+	print("Run 'apply-patches " .. name .. "' to apply")
 end
 
 return {
-	name = "install",
-	help = "Install a repository",
+	name = "fetch",
+	help = "Fetch a package for patching",
 	syntax = "<name> [version]",
 	execute = execute
 }

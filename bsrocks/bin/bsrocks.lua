@@ -15,9 +15,13 @@ else
 	printColoured = function(text) print(text) end
 end
 
-addCommand(require "bsrocks.commands.install")
-addCommand(require "bsrocks.commands.makepatches")
+-- Primary packages
 addCommand(require "bsrocks.commands.search")
+
+-- Admin packages
+addCommand(require "bsrocks.commands.fetch")
+addCommand(require "bsrocks.commands.makepatches")
+addCommand(require "bsrocks.commands.applypatches")
 
 addCommand({
 	name = "help",
@@ -33,14 +37,13 @@ addCommand({
 	end
 })
 
-local command = ...
-if not command then
-	command = "help"
-end
+-- Default to printing help messages
+local command = ... or "help"
 
 local foundCommand = commands[command]
 
 if not foundCommand then
+	-- No such command, print a list of suggestions
 	printError("Cannot find '" .. command .. "'.")
 	local match = require "bsrocks.lib.diffmatchpatch".match_main
 
@@ -56,6 +59,6 @@ if not foundCommand then
 		end
 	end
 	error("No such command", 0)
+else
+	foundCommand.execute(select(2, ...))
 end
-
-foundCommand.execute(select(2, ...))

@@ -1,4 +1,5 @@
-local unserialize = require "bsrocks.lib.unserialize"
+local unserialize = require "bsrocks.lib.serialize".unserialize
+local files = require "bsrocks.lib.files"
 
 local servers = {
 	'http://luarocks.org/repositories/rocks/',
@@ -73,9 +74,7 @@ local function saveFiles(rockspec, files, directory)
 		if build.modules then
 			local moduleDir = fs.combine(directory, "lib")
 			for module, file in pairs(build.modules) do
-				local handle = fs.open(fs.combine(moduleDir, module:gsub("%.", "/") .. ".lua"), "w")
-				handle.write(files[file])
-				handle.close()
+				files.write(fs.combine(moduleDir, module:gsub("%.", "/") .. ".lua"), files[file])
 			end
 		end
 
@@ -84,9 +83,7 @@ local function saveFiles(rockspec, files, directory)
 			for name, install in pairs(build.install) do
 				local dir = fs.combine(directory, name)
 				for name, file in pairs(install) do
-					local handle = fs.open(fs.combine(dir, name .. ".lua"), "w")
-					handle.write(files[file])
-					handle.close()
+					files.write(fs.combine(dir, name .. ".lua"), files[file])
 				end
 			end
 		end

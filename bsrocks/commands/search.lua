@@ -2,7 +2,7 @@ local repo = require "bsrocks.rocks.repository"
 local match = require "bsrocks.lib.diffmatchpatch".match_main
 
 local function execute(search)
-	if not search then error("Expected <name>") end
+	if not search then error("Expected <name>", 0) end
 
 	local names, namesN = {}, 0
 	local all, allN = {}, 0
@@ -36,7 +36,7 @@ local function execute(search)
 
 	-- Print out all found items + version
 	if namesN == 0 then
-		error("Cannot find " .. search)
+		error("Cannot find " .. search, 0)
 	else
 		for i = 1, namesN do
 			local item = names[i]

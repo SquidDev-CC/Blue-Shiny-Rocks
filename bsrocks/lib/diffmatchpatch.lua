@@ -1940,7 +1940,7 @@ function patch_fromText(textline)
 		return patches
 	end
 	local text = {}
-	for line in gmatch(textline, '([^\n]*)') do
+	for line in gmatch(textline .. "\n", '([^\n]*)\n') do
 		text[#text + 1] = line
 	end
 	local textPointer = 1

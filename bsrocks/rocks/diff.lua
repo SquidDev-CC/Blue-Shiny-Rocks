@@ -1,4 +1,5 @@
 local diff = require "bsrocks.lib.diffmatchpatch"
+local fileWrapper = require "bsrocks.lib.files"
 
 local function files(file)
 	local stack, n = { file }, 1
@@ -20,13 +21,6 @@ local function files(file)
 	end
 end
 
-local function readFile(file)
-	local handle = fs.open(file, "r")
-	local contents = handle.readAll()
-	handle.close()
-	return contents
-end
-
 local matches = {
 	["^"] = "%^", ["$"] = "%$", ["("] = "%(", [")"] = "%)",
 	["%"] = "%%", ["."] = "%.", ["["] = "%[", ["]"] = "%]",
@@ -41,14 +35,15 @@ local function escapePattern(pattern)
 	return (pattern:gsub(".", matches))
 end
 
-return function(original, changed, dest)
+local function makePatches(original, changed, patches)
 	local originalP = "^" .. escapePattern(original)
 	local changedP = escapePattern(changed)
-	local destP = escapePattern(dest)
+	local patchesP = escapePattern(patches)
 
+	local changed = {}
 	for file in files(original) do
-		local originalS = readFile(file)
-		local changedS = readFile(file:gsub(originalP, changedP))
+		local originalS = fileWrapper.read(file)
+		local changedS = fileWrapper.read(file:gsub(originalP, changedP))
 
 		local diffs = diff.diff_main(originalS, changedS)
 		diff.diff_cleanupSemantic(diffs)
@@ -58,12 +53,43 @@ return function(original, changed, dest)
 
 		local patch = diff.patch_toText(diff.patch_make(originalS, diffs))
 		if #patch > 0 then
-			local handle = fs.open(file:gsub(originalP, destP) .. ".patch", "w")
-			handle.write(patch)
-			handle.close()
+			changed[#changed + 1] = file:gsub(originalP, "")
+			fileWrapper.write(file:gsub(originalP, patchesP) .. ".patch", patch)
 		end
 
 		os.queueEvent("diff")
 		coroutine.yield("diff")
 	end
+
+	return changed
 end
+
+local function applyPatches(original, changed, patches)
+	local originalP = "^" .. escapePattern(original)
+	local changedP = escapePattern(changed)
+	local patchesP = escapePattern(patches)
+
+	for file in files(original) do
+		local patchFile = file:gsub(originalP, patchesP) .. ".patch"
+		local changedP = file:gsub(originalP, changedP)
+		if fs.exists(patchFile) then
+			local originalS = fileWrapper.read(file)
+			local patchS = fileWrapper.read(patchFile)
+
+			local patches = diff.patch_fromText(patchS)
+			local changedS = diff.patch_apply(patches, originalS)
+
+			fileWrapper.write(changedP, changedS)
+
+			os.queueEvent("diff")
+			coroutine.yield("diff")
+		else
+			fs.copy(file, changedP)
+		end
+	end
+end
+
+return {
+	makePatches = makePatches,
+	applyPatches = applyPatches,
+}
