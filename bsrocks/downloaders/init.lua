@@ -1,9 +1,24 @@
 local downloaders = {
-	require "bsrocks.downloaders.github"
-	-- TODO: tar.gz and zip
+	require "bsrocks.downloaders.github",
 }
 
-return function(source, files, settings)
+local settings = {
+	tries = 3,
+	callback = function(success, path, count, total)
+		if not success then
+			local x, y = term.getCursorPos()
+			term.setCursorPos(1, y)
+			term.clearLine()
+			printError("Cannot download " .. path)
+		end
+
+		local x, y = term.getCursorPos()
+		term.setCursorPos(1, y)
+		term.clearLine()
+		write(("Downloading: %s/%s (%s%%)"):format(count, total, count / total * 100))
+	end
+}
+return function(source, files)
 	for _, downloader in ipairs(downloaders) do
 		local files = downloader(source, files, settings)
 		if files then return files end

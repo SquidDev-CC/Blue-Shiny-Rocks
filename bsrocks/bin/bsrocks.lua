@@ -1,69 +1,61 @@
-local command = ...
+local commands = { }
 
-local repo = require "bsrocks.rocks.repository"
-local download = require "bsrocks.downloaders"
+local function addCommand(command)
+	commands[command.name] = command
+end
 
-if command == "download" then
-	local _, name, version = ...
-	if not name then error("Expected name") end
-
-	local server = repo.servers[1]
-	if not version then
-		local manifest = repo.fetchManifest(server)
-
-		local module = manifest.repository[name]
-		if not module then error("Cannot find " .. name) end
-
-		for name, dat in pairs(module) do
-			version = name
-		end
-
-		if not version then error("Cannot find version for " .. name) end
-
+local printColoured
+if term.isColour() then
+	printColoured = function(text, colour)
+		term.setTextColour(colour)
+		print(text)
+		term.setTextColour(colours.white)
 	end
-	print("Using " .. name .. "-" .. version)
+else
+	printColoured = function(text) print(text) end
+end
 
-	local rockspec = repo.fetchRockspec(server, name, version)
+addCommand(require "bsrocks.commands.install")
+addCommand(require "bsrocks.commands.makepatches")
+addCommand(require "bsrocks.commands.search")
 
-	local files = repo.extractFiles(rockspec)
-	if #files == 0 then error("No files for " .. name .. "-" .. version) end
+addCommand({
+	name = "help",
+	help = "Print this text",
+	syntax = "",
+	execute = function()
+		printColoured("bsrocks <command> [args]", colours.cyan)
+		printColoured("Available commands", colours.lightGrey)
+		for _, command in pairs(commands) do
+			print("  " .. command.name .. " " .. command.syntax)
+			printColoured("    " .. command.help, colours.lightGrey)
+		end
+	end
+})
 
-	local downloaded = download(rockspec.source, files, {
-		tries = 3,
-		callback = function(success, path, count, total)
-			if not success then
-				local x, y = term.getCursorPos()
-				term.setCursorPos(1, y)
-				term.clearLine()
-				printError("Cannot download " .. path)
+local command = ...
+if not command then
+	command = "help"
+end
+
+local foundCommand = commands[command]
+
+if not foundCommand then
+	printError("Cannot find '" .. command .. "'.")
+	local match = require "bsrocks.lib.diffmatchpatch".match_main
+
+	local printDid = false
+	for cmd, _ in pairs(commands) do
+		if match(cmd, command) > 0 then
+			if not printDid then
+				print("Did you mean: ")
+				printDid = true
 			end
 
-			local x, y = term.getCursorPos()
-			term.setCursorPos(1, y)
-			term.clearLine()
-			write(("Downloading: %s/%s (%s%%)"):format(count, total, count / total * 100))
+			print(cmd)
 		end
-	})
-
-	if not downloaded then error("Cannot find downloader for " .. rockspec.source.url) end
-	print()
-
-	repo.saveFiles(rockspec, downloaded, shell.resolve("rocks-original/" .. name))
-	repo.saveFiles(rockspec, downloaded, shell.resolve("rocks/" .. name))
-elseif command == "make-patches" then
-	local _, name = ...
-	if not name then error("Expected name") end
-
-	local original = shell.resolve("rocks-original/" .. name)
-	local changed = shell.resolve("rocks/" .. name)
-
-	if not fs.exists(original) then error("Cannot find original sources") end
-	if not fs.exists(changed) then error("Cannot find changed sources") end
-
-	local patch = shell.resolve("rocks-patch/" .. name)
-	fs.delete(patch)
-
-	require "bsrocks.rocks.diff"(original, changed, patch)
-else
-	error("Unknown command")
+	end
+	error("No such command", 0)
 end
+
+foundCommand.execute(select(2, ...))

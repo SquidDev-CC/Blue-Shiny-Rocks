@@ -15,6 +15,19 @@ local function fetchManifest(repo)
 	return unserialize(contents)
 end
 
+local function latestVersion(manifest, name)
+	local module = manifest.repository[name]
+	if not module then error("Cannot find " .. name) end
+
+	for name, dat in pairs(module) do
+		version = name
+	end
+
+	if not version then error("Cannot find version for " .. name) end
+
+	return version
+end
+
 local function fetchRockspec(repo, name, version)
 	local handle = http.get(repo .. name .. '-' .. version .. '.rockspec')
 	if not handle then
@@ -83,6 +96,7 @@ end
 return {
 	servers = servers,
 	fetchManifest = fetchManifest,
+	latestVersion = latestVersion,
 	fetchRockspec = fetchRockspec,
 
 	extractFiles = extractFiles,

@@ -1515,7 +1515,7 @@ function match_main(text, pattern, loc)
 		-- Nothing to match.
 		return -1
 	end
-	loc = max(1, min(loc, #text))
+	loc = max(1, min(loc or 1, #text))
 	if (strsub(text, loc, loc + #pattern - 1) == pattern) then
 		-- Perfect match at the perfect spot!	(Includes case of null pattern)
 		return loc
@@ -2332,6 +2332,9 @@ function _patch_appendText(patch, text)
 	return text
 end
 
+settings {
+	Match_Threshold = 0.3,
+}
 -- Expose the API
 return {
 	DIFF_DELETE = DIFF_DELETE,

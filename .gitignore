@@ -1,5 +1,4 @@
 build
 *.image
-rocks-original/
-rocks/
-rocks-patch/
+/rocks-*/
+/rocks/
