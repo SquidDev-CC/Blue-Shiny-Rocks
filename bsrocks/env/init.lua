@@ -94,14 +94,14 @@ return function(options)
 	end
 
 	-- Setup other items
-	io(env)
-	os(env)
+	require "bsrocks.env.io"(env)
+	require "bsrocks.env.os"(env)
 
 	if options.debug ~= false then
-		debug(env)
+		require "bsrocks.env.debug"(env)
 	end
 
-	package(env)
+	require "bsrocks.env.package".package(env)
 
 	return env
 end
