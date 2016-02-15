@@ -1,8 +1,8 @@
 local download = require "bsrocks.downloaders"
 local fileWrapper = require "bsrocks.lib.files"
-local settings = require "bsrocks.lib.settings"
 local repo = require "bsrocks.rocks.repository"
 local serialize = require "bsrocks.lib.serialize"
+local settings = require "bsrocks.lib.settings"
 
 local patchDirectory = settings.patchDirectory
 local servers = settings.servers

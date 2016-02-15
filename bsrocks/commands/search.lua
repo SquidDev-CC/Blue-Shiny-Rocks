@@ -1,6 +1,6 @@
+local match = require "bsrocks.lib.diffmatchpatch".match_main
 local repo = require "bsrocks.rocks.repository"
 local settings = require "bsrocks.lib.settings"
-local match = require "bsrocks.lib.diffmatchpatch".match_main
 
 local servers = settings.servers
 

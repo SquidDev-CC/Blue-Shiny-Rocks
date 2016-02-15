@@ -1,6 +1,3 @@
--- local current = fs.getName(shell.getRunningProgram())
--- local currentLen = #current
-
 --- Checks an argument has the correct type
 -- @param arg The argument to check
 -- @tparam string argType The type that it should be
@@ -29,7 +26,7 @@ local function traceback(thread, message, level)
 	local result = {"stack traceback: "}
 	for i = 2, 20 do
 		local _, err = pcall(error, "", i + level)
-		if err == "" then -- or err:sub(1, currentLen) == current
+		if err == "" then
 			break
 		end
 
@@ -43,8 +40,20 @@ local function traceback(thread, message, level)
 	return contents
 end
 
+local printColoured
+if term.isColour() then
+	printColoured = function(text, colour)
+		term.setTextColour(colour)
+		print(text)
+		term.setTextColour(colours.white)
+	end
+else
+	printColoured = function(text) print(text) end
+end
+
 return {
 	checkType = checkType,
 	tmpName = tmpName,
 	traceback = traceback,
+	printColoured = printColoured,
 }

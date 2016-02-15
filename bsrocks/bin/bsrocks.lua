@@ -4,20 +4,12 @@ local function addCommand(command)
 	commands[command.name] = command
 end
 
-local printColoured
-if term.isColour() then
-	printColoured = function(text, colour)
-		term.setTextColour(colour)
-		print(text)
-		term.setTextColour(colours.white)
-	end
-else
-	printColoured = function(text) print(text) end
-end
+local printColoured = require "bsrocks.lib.utils".printColoured
 
 -- Primary packages
 addCommand(require "bsrocks.commands.search")
 addCommand(require "bsrocks.commands.install")
+addCommand(require "bsrocks.commands.list")
 
 -- Admin packages
 addCommand(require "bsrocks.commands.fetch")
@@ -62,5 +54,5 @@ if not foundCommand then
 	end
 	error("No such command", 0)
 else
-	foundCommand.execute(select(2, ...))
+	return foundCommand.execute(select(2, ...))
 end

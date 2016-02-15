@@ -163,7 +163,7 @@ local Patch_Margin = 4
 -- How many bits in a number?
 local Match_MaxBits = getMaxBits()
 
-function settings(new)
+local function settings(new)
 	if new then
 		Diff_Timeout = new.Diff_Timeout or Diff_Timeout
 		Diff_EditCost = new.Diff_EditCost or Diff_EditCost
@@ -2346,6 +2346,7 @@ return {
 	diff_cleanupEfficiency = diff_cleanupEfficiency,
 	diff_levenshtein = diff_levenshtein,
 	diff_prettyHtml = diff_prettyHtml,
+	settings = settings,
 
 	match_main = match_main,
 
