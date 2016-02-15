@@ -2,8 +2,10 @@ local downloaders = {
 	require "bsrocks.downloaders.github",
 }
 
+local tries = require "bsrocks.lib.settings".tries
+
 local settings = {
-	tries = 3,
+	tries = tries,
 	callback = function(success, path, count, total)
 		if not success then
 			local x, y = term.getCursorPos()

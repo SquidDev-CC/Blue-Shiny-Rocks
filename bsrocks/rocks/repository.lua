@@ -1,10 +1,6 @@
 local unserialize = require "bsrocks.lib.serialize".unserialize
 local fileWrapper = require "bsrocks.lib.files"
 
-local servers = {
-	'http://luarocks.org/repositories/rocks/',
-}
-
 local function fetchManifest(repo)
 	local handle = http.get(repo .. "manifest-5.1")
 	if not handle then
@@ -91,7 +87,6 @@ local function saveFiles(rockspec, files, directory)
 end
 
 return {
-	servers = servers,
 	fetchManifest = fetchManifest,
 	latestVersion = latestVersion,
 	fetchRockspec = fetchRockspec,

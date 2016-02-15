@@ -1,18 +1,19 @@
 local diff = require "bsrocks.rocks.diff"
-local serialize = require "bsrocks.lib.serialize"
 local fileWrapper = require "bsrocks.lib.files"
+local patchDirectory = require "bsrocks.lib.settings".patchDirectory
+local serialize = require "bsrocks.lib.serialize"
 
 local function execute(name)
 	if not name then error("Expected name", 0) end
 
-	local original = shell.resolve("rocks-original/" .. name)
-	local patch = shell.resolve("rocks/" .. name)
-	local changed = shell.resolve("rocks-changes/" .. name)
+	local original = fs.combine(patchDirectory, "rocks-original/" .. name)
+	local patch = fs.combine(patchDirectory, "rocks/" .. name)
+	local changed = fs.combine(patchDirectory, "rocks-changes/" .. name)
 
-	if not fs.exists(original) then error("Cannot find original sources", 0) end
+	fileWrapper.assertExists(original, "original sources", 0)
 
 	local info = patch .. ".patchspec"
-	if not fs.exists(info) then error("Cannot find original sources", 0) end
+	fileWrapper.assertExists(info, "patchspec", 0)
 
 	local data = serialize.unserialize(fileWrapper.read(info))
 	fs.delete(changed)

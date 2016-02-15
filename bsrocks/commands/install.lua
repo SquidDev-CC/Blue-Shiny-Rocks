@@ -1,13 +1,17 @@
-local repo = require "bsrocks.rocks.repository"
 local download = require "bsrocks.downloaders"
-local serialize = require "bsrocks.lib.serialize"
 local fileWrapper = require "bsrocks.lib.files"
+local settings = require "bsrocks.lib.settings"
+local repo = require "bsrocks.rocks.repository"
+local serialize = require "bsrocks.lib.serialize"
+
+local installDirectory = settings.installDirectory
+local servers = settings.servers
 
 local function execute(name, version)
 	if not name then error("Expected name", 0) end
 
 	-- TODO: Multiple servers
-	local server = repo.servers[1]
+	local server = servers[1]
 	if not version then
 		print("Fetching manifest from " .. server)
 		local manifest = repo.fetchManifest(server)
@@ -34,7 +38,7 @@ local function execute(name, version)
 	if not downloaded then error("Cannot find downloader for " .. rockspec.source.url, 0) end
 	print()
 
-	repo.saveFiles(rockspec, downloaded, "/rocks")
+	repo.saveFiles(rockspec, downloaded, installDirectory)
 end
 
 return {

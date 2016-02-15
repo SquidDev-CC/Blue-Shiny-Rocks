@@ -11,7 +11,14 @@ local function write(file, contents)
 	handle.close()
 end
 
+local function assertExists(file, name, level)
+	if not fs.exists(file) then
+		error("Cannot find " .. name .. " (Looking for " .. file .. ")", level or 1)
+	end
+end
+
 return {
 	read = read,
 	write = write,
+	assertExists = assertExists,
 }
