@@ -2,6 +2,7 @@
 -- http://www.lua.org/manual/5.1/manual.html#5.9
 
 local traceback = require "bsrocks.lib.utils".traceback
+
 local function err(name)
 	return function() error(name .. " not implemented", 2) end
 end

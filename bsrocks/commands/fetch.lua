@@ -1,6 +1,6 @@
 local download = require "bsrocks.downloaders"
 local fileWrapper = require "bsrocks.lib.files"
-local repo = require "bsrocks.rocks.repository"
+local rockspec = require "bsrocks.rocks.rockspec"
 local serialize = require "bsrocks.lib.serialize"
 local settings = require "bsrocks.lib.settings"
 
@@ -10,18 +10,18 @@ local servers = settings.servers
 local function execute(name, version)
 	if not name then error("Expected name", 0) end
 
-	local server, manifest = repo.findRock(servers, name)
+	local server, manifest = rockspec.findRock(servers, name)
 	if not server then
 		error("Cannot find '" .. name .. "'", 0)
 	end
 
 	if not version then
-		version = repo.latestVersion(manifest, name)
+		version = rockspec.latestVersion(manifest, name)
 	end
 
-	local rockspec = repo.fetchRockspec(server, name, version)
+	local rockspec = rockspec.fetchRockspec(server, name, version)
 
-	local files = repo.extractFiles(rockspec)
+	local files = rockspec.extractFiles(rockspec)
 	if #files == 0 then error("No files for " .. name .. "-" .. version, 0) end
 
 	local downloaded = download(rockspec.source, files)

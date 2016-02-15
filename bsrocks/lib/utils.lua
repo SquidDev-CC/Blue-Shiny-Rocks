@@ -1,3 +1,6 @@
+local logFile = require "bsrocks.lib.settings".logFile
+if fs.exists(logFile) then fs.delete(logFile) end
+
 --- Checks an argument has the correct type
 -- @param arg The argument to check
 -- @tparam string argType The type that it should be
@@ -51,9 +54,24 @@ else
 	printColoured = function(text) print(text) end
 end
 
+local function log(msg)
+	printColoured(msg, colours.lightGrey)
+
+	local handle
+	if fs.exists(logFile) then
+		handle = fs.open(logFile, "a")
+	else
+		handle = fs.open(logFile, "w")
+	end
+
+	handle.writeLine(msg)
+	handle.close()
+end
+
 return {
 	checkType = checkType,
 	tmpName = tmpName,
 	traceback = traceback,
 	printColoured = printColoured,
+	log = log,
 }

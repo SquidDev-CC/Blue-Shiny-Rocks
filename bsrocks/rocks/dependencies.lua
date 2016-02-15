@@ -29,6 +29,7 @@ local versionMeta = {
 		end
 		return true
 	end,
+
 	--- Size comparison for versions.
 	-- All version numbers are compared.
 	-- If both versions have revision numbers, they are compared;
@@ -43,11 +44,35 @@ local versionMeta = {
 				return (v1i < v2i)
 			end
 		end
+
 		if v1.revision and v2.revision then
 			return (v1.revision < v2.revision)
 		end
+
+		-- They are equal, so we must escape
 		return false
-	end
+	end,
+
+	--- Size comparison for versions.
+	-- All version numbers are compared.
+	-- If both versions have revision numbers, they are compared;
+	-- otherwise the revision number is ignored.
+	-- @param v1 table: version table to compare.
+	-- @param v2 table: version table to compare.
+	-- @return boolean: true if v1 is considered lower or equal than v2.
+	__le = function(v1, v2)
+		for i = 1, math.max(#v1, #v2) do
+			local v1i, v2i = v1[i] or 0, v2[i] or 0
+			if v1i ~= v2i then
+				return (v1i <= v2i)
+			end
+		end
+
+		if v1.revision and v2.revision then
+			return (v1.revision <= v2.revision)
+		end
+		return true
+	end,
 }
 
 --- Parse a version string, converting to table format.
@@ -214,14 +239,12 @@ function matchConstraints(version, constraints)
 	assert(type(constraints) == "table")
 
 	local ok = true
-	setmetatable(version, versionMeta)
 	for _, constraint in pairs(constraints) do
 		if type(constraint.version) == "string" then
 			constraint.version = parseVersion(constraint.version)
 		end
 
 		local constraintVersion, constraintOp = constraint.version, constraint.op
-		setmetatable(constraintVersion, versionMeta)
 		if     constraintOp == "==" then ok = version == constraintVersion
 		elseif constraintOp == "~=" then ok = version ~= constraintVersion
 		elseif constraintOp == ">"  then ok = version >  constraintVersion
@@ -235,58 +258,9 @@ function matchConstraints(version, constraints)
 	return ok
 end
 
---- Attempt to match a dependency to an installed rock.
--- @param dep table: A dependency parsed in table format.
--- @param blacklist table: Versions that can't be accepted. Table where keys
--- are program versions and values are 'true'.
--- @return table or nil: A table containing fields 'name' and 'version'
--- representing an installed rock which matches the given dependency,
--- or nil if it could not be matched.
-function matchDependency(dependency, constraints)
-	assert(type(dep) == "table")
-
-	local versions = cfg.rocks_provided[dep.name]
-	if cfg.rocks_provided[dep.name] then
-		-- provided rocks have higher priority than manifest's rocks
-		versions = { cfg.rocks_provided[dep.name] }
-	else
-		versions = manif_core.get_versions(dep.name, deps_mode)
-	end
-	if not versions then
-		return nil
-	end
-	if blacklist then
-		local i = 1
-		while versions[i] do
-			if blacklist[versions[i]] then
-				table.remove(versions, i)
-			else
-				i = i + 1
-			end
-		end
-	end
-	local candidates = {}
-	for _, vstring in ipairs(versions) do
-		local version = parseVersion(vstring)
-		if matchConstraints(version, constraints) then
-			table.insert(candidates, version)
-		end
-	end
-	if #candidates == 0 then
-		return nil
-	else
-		table.sort(candidates)
-		return {
-			name = dep.name,
-			version = candidates[#candidates].string
-		}
-	end
-end
-
 return {
 	parseVersion = parseVersion,
 	parseConstraints = parseConstraints,
 	parseDependency = parseDependency,
 	matchConstraints = matchConstraints,
-	matchDependency = matchDependency,
 }

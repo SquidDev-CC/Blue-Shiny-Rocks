@@ -1,5 +1,7 @@
-local unserialize = require "bsrocks.lib.serialize".unserialize
+local dependencies = require "bsrocks.rocks.dependencies"
 local fileWrapper = require "bsrocks.lib.files"
+local unserialize = require "bsrocks.lib.serialize".unserialize
+local utils = require "bsrocks.lib.utils"
 
 local manifestCache = {}
 local rockCache = {}
@@ -8,7 +10,7 @@ local function fetchManifest(server)
 	local manifest = manifestCache[server]
 	if manifest then return manifest end
 
-	print("Fetching " .. server)
+	utils.log("Fetching manifest " .. server)
 
 	local handle = http.get(server .. "manifest-5.1")
 	if not handle then
@@ -34,12 +36,19 @@ local function findRock(servers, name)
 	return
 end
 
-local function latestVersion(manifest, name)
+local function latestVersion(manifest, name, constraints)
 	local module = manifest.repository[name]
 	if not module then error("Cannot find " .. name) end
 
 	for name, dat in pairs(module) do
-		version = name
+		if constraints then
+			local ver = dependencies.parseVersion(name)
+			if dependencies.matchConstraints(ver, constraints) then
+				version = name
+			end
+		else
+			version = name
+		end
 	end
 
 	if not version then error("Cannot find version for " .. name) end
@@ -53,7 +62,7 @@ local function fetchRockspec(repo, name, version)
 	local rockspec = rockCache[whole]
 	if rockspec then return rockspec end
 
-	print("Fetching " .. whole)
+	utils.log("Fetching rockspec " .. whole)
 
 	local handle = http.get(repo .. name .. '-' .. version .. '.rockspec')
 	if not handle then

@@ -7,15 +7,16 @@ end
 local printColoured = require "bsrocks.lib.utils".printColoured
 
 -- Primary packages
-addCommand(require "bsrocks.commands.search")
+addCommand(require "bsrocks.commands.dumpsettings")
 addCommand(require "bsrocks.commands.install")
 addCommand(require "bsrocks.commands.list")
+addCommand(require "bsrocks.commands.search")
 
 -- Admin packages
-addCommand(require "bsrocks.commands.fetch")
-addCommand(require "bsrocks.commands.makepatches")
 addCommand(require "bsrocks.commands.applypatches")
 addCommand(require "bsrocks.commands.exec")
+addCommand(require "bsrocks.commands.fetch")
+addCommand(require "bsrocks.commands.makepatches")
 
 addCommand({
 	name = "help",
