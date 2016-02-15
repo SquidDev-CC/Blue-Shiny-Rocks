@@ -10,25 +10,21 @@ local servers = settings.servers
 local function execute(name, version)
 	if not name then error("Expected name", 0) end
 
-	-- TODO: Multiple servers
-	local server = servers[1]
-	if not version then
-		print("Fetching manifest from " .. server)
-		local manifest = repo.fetchManifest(server)
-		if not manifest.repository[name] then
-			error("Cannot find '" .. name .. "'", 0)
-		end
-		version = repo.latestVersion(manifest, name)
+	local server, manifest = repo.findRock(servers, name)
+	if not server then
+		error("Cannot find '" .. name .. "'", 0)
 	end
 
-	print("Using " .. name .. "-" .. version)
+	if not version then
+		version = repo.latestVersion(manifest, name)
+	end
 
 	local rockspec = repo.fetchRockspec(server, name, version)
 
 	for _, name in ipairs(rockspec.dependencies) do
 		print(name)
 	end
-	error("Done", 0)
+	error("Not actually installing", 0)
 
 	local files = repo.extractFiles(rockspec)
 	if #files == 0 then error("No files for " .. name .. "-" .. version, 0) end
@@ -39,6 +35,7 @@ local function execute(name, version)
 	print()
 
 	repo.saveFiles(rockspec, downloaded, installDirectory)
+	fileWrapper.write(fs.combine(installDirectory, name .. ".rockspec"), serialize.serialize(rockspec))
 end
 
 return {

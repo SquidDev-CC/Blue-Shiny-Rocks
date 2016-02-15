@@ -10,18 +10,14 @@ local servers = settings.servers
 local function execute(name, version)
 	if not name then error("Expected name", 0) end
 
-	-- TODO: Multiple servers
-	local server = servers[1]
-	if not version then
-		print("Fetching manifest from " .. server)
-		local manifest = repo.fetchManifest(server)
-		if not manifest.repository[name] then
-			error("Cannot find '" .. name .. "'", 0)
-		end
-		version = repo.latestVersion(manifest, name)
+	local server, manifest = repo.findRock(servers, name)
+	if not server then
+		error("Cannot find '" .. name .. "'", 0)
 	end
 
-	print("Using " .. name .. "-" .. version)
+	if not version then
+		version = repo.latestVersion(manifest, name)
+	end
 
 	local rockspec = repo.fetchRockspec(server, name, version)
 
@@ -31,7 +27,6 @@ local function execute(name, version)
 	local downloaded = download(rockspec.source, files)
 
 	if not downloaded then error("Cannot find downloader for " .. rockspec.source.url, 0) end
-	print()
 
 	local dir = fs.combine(patchDirectory, "rocks-original/" .. name)
 	for name, contents in pairs(downloaded) do

@@ -1,15 +1,37 @@
 local unserialize = require "bsrocks.lib.serialize".unserialize
 local fileWrapper = require "bsrocks.lib.files"
 
-local function fetchManifest(repo)
-	local handle = http.get(repo .. "manifest-5.1")
+local manifestCache = {}
+local rockCache = {}
+
+local function fetchManifest(server)
+	local manifest = manifestCache[server]
+	if manifest then return manifest end
+
+	print("Fetching " .. server)
+
+	local handle = http.get(server .. "manifest-5.1")
 	if not handle then
-		error("Cannot fetch manifest: " .. repo)
+		error("Cannot fetch manifest: " .. server)
 	end
 
 	local contents = handle.readAll()
 	handle.close()
-	return unserialize(contents)
+
+	manifest = unserialize(contents)
+	manifestCache[server] = manifest
+	return manifest
+end
+
+local function findRock(servers, name)
+	for _, server in ipairs(servers) do
+		local manifest = fetchManifest(server)
+		if manifest.repository[name] then
+			return server, manifest
+		end
+	end
+
+	return
 end
 
 local function latestVersion(manifest, name)
@@ -26,6 +48,13 @@ local function latestVersion(manifest, name)
 end
 
 local function fetchRockspec(repo, name, version)
+	local whole = name .. "-" .. version
+
+	local rockspec = rockCache[whole]
+	if rockspec then return rockspec end
+
+	print("Fetching " .. whole)
+
 	local handle = http.get(repo .. name .. '-' .. version .. '.rockspec')
 	if not handle then
 		error("Canot fetch " .. name .. "-" .. version .. " from " .. repo)
@@ -33,7 +62,10 @@ local function fetchRockspec(repo, name, version)
 
 	local contents = handle.readAll()
 	handle.close()
-	return unserialize(contents)
+
+	rockspec = unserialize(contents)
+	rockCache[whole] = rockspec
+	return rockspec
 end
 
 --- Extract files to download from rockspec
@@ -88,6 +120,7 @@ end
 
 return {
 	fetchManifest = fetchManifest,
+	findRock = findRock,
 	latestVersion = latestVersion,
 	fetchRockspec = fetchRockspec,
 

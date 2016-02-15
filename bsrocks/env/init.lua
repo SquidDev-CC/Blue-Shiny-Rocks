@@ -14,7 +14,7 @@ return function(options)
 		table = table,
 		coroutine = coroutine,
 		collectgarbage = nImplemented("collectgarbage"),
-		_VERSION = "Lua 5.1" -- Potentially dangerous.
+		_VERSION = _VERSION
 	}
 	_G._G = _G
 
