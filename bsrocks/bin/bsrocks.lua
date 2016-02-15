@@ -17,6 +17,7 @@ end
 
 -- Primary packages
 addCommand(require "bsrocks.commands.search")
+addCommand(require "bsrocks.commands.install")
 
 -- Admin packages
 addCommand(require "bsrocks.commands.fetch")

@@ -3,7 +3,7 @@ local serialize = require "bsrocks.lib.serialize"
 local fileWrapper = require "bsrocks.lib.files"
 
 local function execute(name)
-	if not name then error("Expected name") end
+	if not name then error("Expected name", 0) end
 
 	local original = shell.resolve("rocks-original/" .. name)
 	local changed = shell.resolve("rocks-changes/" .. name)
@@ -11,16 +11,20 @@ local function execute(name)
 	if not fs.exists(original) then error("Cannot find original sources", 0) end
 	if not fs.exists(changed) then error("Cannot find changed sources", 0) end
 
-	local info = shell.resolve("rocks/" .. name .. "/info.lua")
+	local patch = shell.resolve("rocks/" .. name)
+	fs.delete(patch)
+
+	local info = patch .. ".patchspec"
 	local data = {}
 	if fs.exists(info) then
 		data = serialize.unserialize(fileWrapper.read(info))
 	end
 
-	local patch = shell.resolve("rocks/" .. name)
-	fs.delete(patch)
+	local changed, added, removed = diff.makePatches(original, changed, patch)
+	data.changed = changed
+	data.added = added
+	data.removed = removed
 
-	data.changed = diff.makePatches(original, changed, patch)
 	fileWrapper.write(info, serialize.serialize(data))
 end
 

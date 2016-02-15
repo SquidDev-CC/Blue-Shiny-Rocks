@@ -61,7 +61,7 @@ local function serializeImpl(value, tracking, indent, root)
 
 			if not root then
 				resultN = resultN + 1
-				result[resultN] = "}"
+				result[resultN] = indent .. "}"
 			end
 
 			return table.concat(result)

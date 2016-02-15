@@ -36,55 +36,94 @@ local function escapePattern(pattern)
 end
 
 local function makePatches(original, changed, patches)
-	local originalP = "^" .. escapePattern(original)
+	local originalP = escapePattern(original)
 	local changedP = escapePattern(changed)
 	local patchesP = escapePattern(patches)
 
-	local changed = {}
+	local patches, remove = {}, {}
 	for file in files(original) do
 		local originalS = fileWrapper.read(file)
-		local changedS = fileWrapper.read(file:gsub(originalP, changedP))
 
-		local diffs = diff.diff_main(originalS, changedS)
-		diff.diff_cleanupSemantic(diffs)
+		local changedPath = file:gsub("^" .. originalP, changedP)
+		if fs.exists(changedPath) then
+			local changedS = fileWrapper.read(changedPath)
 
-		os.queueEvent("diff")
-		coroutine.yield("diff")
+			local diffs = diff.diff_main(originalS, changedS)
+			diff.diff_cleanupSemantic(diffs)
 
-		local patch = diff.patch_toText(diff.patch_make(originalS, diffs))
-		if #patch > 0 then
-			changed[#changed + 1] = file:gsub(originalP, "")
-			fileWrapper.write(file:gsub(originalP, patchesP) .. ".patch", patch)
+			os.queueEvent("diff")
+			coroutine.yield("diff")
+
+			local patch = diff.patch_toText(diff.patch_make(originalS, diffs))
+			if #patch > 0 then
+				patches[#patches + 1] = file:gsub("^" .. originalP, "")
+				fileWrapper.write(file:gsub("^" .. originalP, patchesP) .. ".patch", patch)
+			end
+
+			os.queueEvent("diff")
+			coroutine.yield("diff")
+		else
+			remove[#remove + 1] = file:gsub("^" .. originalP, "")
 		end
+	end
+
+	local added = {}
+	for file in files(changed) do
+		local originalPath = file:gsub("^" .. changedP, originalP)
+		if not fs.exists(originalPath) then
+			added[#added + 1] = file:gsub(changedP, "")
+		end
+	end
+
+	return patches, added, remove
+end
+
+local function applyPatches(original, changed, patchDir, patches, added, removed)
+	local originalP = "^" .. escapePattern(original)
+	local changedP = escapePattern(changed)
+	local patchesP = escapePattern(patchDir)
+
+	local modified = {}
+	for _, file in ipairs(patches) do
+		modified[file:gsub(originalP, "")] = true
+
+		local patchFile = fs.combine(patchDir, file) .. ".patch"
+		local changedFile = fs.combine(changed, file)
+		local originalFile = fs.combine(original, file)
+
+		if not fs.exists(patchFile) then
+			error("Cannot find patch " .. file .. ".patch")
+		end
+
+		if not fs.exists(originalFile) then
+			error("Cannot find original " .. file .. ".patch")
+		end
+
+		local originalS = fileWrapper.read(originalFile)
+		local patchS = fileWrapper.read(patchFile)
+
+		local patches = diff.patch_fromText(patchS)
+		local changedS = diff.patch_apply(patches, originalS)
+
+		fileWrapper.write(changedFile, changedS)
 
 		os.queueEvent("diff")
 		coroutine.yield("diff")
 	end
 
-	return changed
-end
+	for _, file in ipairs(removed) do
+		modified[file:gsub(originalP, "")] = true
+	end
 
-local function applyPatches(original, changed, patches)
-	local originalP = "^" .. escapePattern(original)
-	local changedP = escapePattern(changed)
-	local patchesP = escapePattern(patches)
+	for _, file in ipairs(added) do
+		modified[file:gsub(originalP, "")] = true
+		fs.copy(fs.combine(patchDir, file), fs.combine(changed, file))
+	end
 
 	for file in files(original) do
-		local patchFile = file:gsub(originalP, patchesP) .. ".patch"
-		local changedP = file:gsub(originalP, changedP)
-		if fs.exists(patchFile) then
-			local originalS = fileWrapper.read(file)
-			local patchS = fileWrapper.read(patchFile)
-
-			local patches = diff.patch_fromText(patchS)
-			local changedS = diff.patch_apply(patches, originalS)
-
-			fileWrapper.write(changedP, changedS)
-
-			os.queueEvent("diff")
-			coroutine.yield("diff")
-		else
-			fs.copy(file, changedP)
+		if not modified[file:gsub(originalP, "")] then
+			local changed = file:gsub(originalP, changedP)
+			fs.copy(file, changed)
 		end
 	end
 end
