@@ -2,6 +2,7 @@
 -- See: http://www.lua.org/manual/5.1/manual.html#5.3
 
 local utils = require "bsrocks.lib.utils"
+local settings = require "bsrocks.lib.settings"
 local checkType = utils.checkType
 
 return function(env)
@@ -10,7 +11,7 @@ return function(env)
 	local package = {
 		loaded = {},
 		preload = {},
-		path = shell.path():gsub(":", "/?;") .. "/?",
+		path = settings.libPath,
 	}
 	-- Set as a global
 	_G.package = package

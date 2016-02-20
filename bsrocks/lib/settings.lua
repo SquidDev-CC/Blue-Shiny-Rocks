@@ -12,8 +12,8 @@ local currentSettings = {
 		lua = "5.1",
 		bit32 = "999",
 	},
-	libPath = { "/rocks/lib/" },
-	binPath = { "/rocks/bin/" },
+	libPath = "/rocks/lib/?.lua;/rocks/lib/?;/rocks/lib/?/init.lua",
+	binPath = "/rocks/bin/?.lua;/rocks/bin/?",
 	logFile = "bsrocks.log"
 }
 

@@ -12,13 +12,14 @@ addCommand(require "bsrocks.commands.dumpsettings")
 addCommand(require "bsrocks.commands.install")
 addCommand(require "bsrocks.commands.list")
 addCommand(require "bsrocks.commands.search")
+addCommand(require "bsrocks.commands.exec")
+addCommand(require "bsrocks.commands.repl")
 
 -- Install admin packages if we have a patch directory
 if fs.exists(patchDirectory) then
-	addCommand(require "bsrocks.commands.applypatches")
-	addCommand(require "bsrocks.commands.exec")
-	addCommand(require "bsrocks.commands.fetch")
-	addCommand(require "bsrocks.commands.makepatches")
+	addCommand(require "bsrocks.commands.admin.applypatches")
+	addCommand(require "bsrocks.commands.admin.fetch")
+	addCommand(require "bsrocks.commands.admin.makepatches")
 end
 
 addCommand({
