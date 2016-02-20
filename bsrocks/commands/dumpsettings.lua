@@ -9,7 +9,7 @@ return {
 	syntax = "",
 	execute = function()
 		local dumped = serialize.serialize(settings)
-		utils.printColoured(dumped, colours.lightGrey)
+		utils.log("Dumping to .bsrocks")
 		fileWrapper.write(".bsrocks", dumped)
 	end,
 }

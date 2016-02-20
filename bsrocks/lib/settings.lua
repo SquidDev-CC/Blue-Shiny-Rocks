@@ -19,9 +19,12 @@ local currentSettings = {
 
 if fs.exists(".bsrocks") then
 	local serialize = require "bsrocks.lib.serialize"
-	local fileWrapper = require "bsrocks.lib.files"
 
-	for k, v in pairs(serialize.unserialize(fileWrapper.read(".bsrocks"))) do
+	local handle = fs.open(".bsrocks", "r")
+	local contents = handle.readAll()
+	handle.close()
+
+	for k, v in pairs(serialize.unserialize(contents)) do
 		currentSettings[k] = v
 	end
 end
@@ -33,5 +36,17 @@ if settings then
 		currentSettings[k] = settings.get("bsrocks." .. k, v)
 	end
 end
+
+--- Add trailing slashes to servers
+local function patchServers(servers)
+	for i, server in ipairs(servers) do
+		if server:sub(#server) ~= "/" then
+			servers[i] = server .. "/"
+		end
+	end
+end
+
+patchServers(currentSettings.patchServers)
+patchServers(currentSettings.servers)
 
 return currentSettings

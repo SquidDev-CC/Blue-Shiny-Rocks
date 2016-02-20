@@ -1,4 +1,4 @@
-local diff = require "bsrocks.rocks.diff"
+local patchspec = require "bsrocks.rocks.patchspec"
 local fileWrapper = require "bsrocks.lib.files"
 local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 local serialize = require "bsrocks.lib.serialize"
@@ -18,7 +18,16 @@ local function execute(name)
 	local data = serialize.unserialize(fileWrapper.read(info))
 	fs.delete(changed)
 
-	diff.applyPatches(original, changed, patch, data.changed or {}, data.added or {}, data.removed or {})
+	local originalSources = fileWrapper.readDir(original)
+	local replaceSources = {}
+	if fs.exists(patch) then replaceSources = fileWrapper.readDir(patch) end
+
+	local changedSources = patchspec.applyPatches(
+		originalSources, replaceSources,
+		data.patches or {}, data.added or {}, data.removed or {}
+	)
+
+	fileWrapper.writeDir(changed, changedSources)
 end
 
 return {

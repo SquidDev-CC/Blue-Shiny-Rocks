@@ -1,4 +1,5 @@
 local logFile = require "bsrocks.lib.settings".logFile
+
 if fs.exists(logFile) then fs.delete(logFile) end
 
 --- Checks an argument has the correct type
@@ -68,10 +69,27 @@ local function log(msg)
 	handle.close()
 end
 
+
+local matches = {
+	["^"] = "%^", ["$"] = "%$", ["("] = "%(", [")"] = "%)",
+	["%"] = "%%", ["."] = "%.", ["["] = "%[", ["]"] = "%]",
+	["*"] = "%*", ["+"] = "%+", ["-"] = "%-", ["?"] = "%?",
+	["\0"] = "%z",
+}
+
+--- Escape a string for using in a pattern
+-- @tparam string pattern The string to escape
+-- @treturn string The escaped pattern
+local function escapePattern(pattern)
+	return (pattern:gsub(".", matches))
+end
+
+
 return {
 	checkType = checkType,
 	tmpName = tmpName,
 	traceback = traceback,
 	printColoured = printColoured,
 	log = log,
+	escapePattern = escapePattern,
 }

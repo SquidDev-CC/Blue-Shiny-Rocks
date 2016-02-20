@@ -1,4 +1,4 @@
-local diff = require "bsrocks.rocks.diff"
+local patchspec = require "bsrocks.rocks.patchspec"
 local fileWrapper = require "bsrocks.lib.files"
 local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 local serialize = require "bsrocks.lib.serialize"
@@ -12,7 +12,7 @@ local function execute(name)
 	fileWrapper.assertExists(original, "original sources", 0)
 	fileWrapper.assertExists(changed, "changed sources", 0)
 
-	local patch = shell.resolve("rocks/" .. name)
+	local patch = fs.combine(patchDirectory, "rocks/" .. name)
 	fs.delete(patch)
 
 	local info = patch .. ".patchspec"
@@ -21,11 +21,15 @@ local function execute(name)
 		data = serialize.unserialize(fileWrapper.read(info))
 	end
 
-	local changed, added, removed = diff.makePatches(original, changed, patch)
-	data.changed = changed
+	local originalSources = fileWrapper.readDir(original)
+	local changedSources = fileWrapper.readDir(changed)
+
+	local files, patches, added, removed = patchspec.makePatches(originalSources, changedSources)
+	data.patches = patches
 	data.added = added
 	data.removed = removed
 
+	fileWrapper.writeDir(patch, files)
 	fileWrapper.write(info, serialize.serialize(data))
 end
 

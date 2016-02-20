@@ -19,14 +19,14 @@ local function execute(name, version)
 		version = rockspec.latestVersion(manifest, name)
 	end
 
-	local rockspec = rockspec.fetchRockspec(server, name, version)
+	local rock = rockspec.fetchRockspec(server, name, version)
 
-	local files = rockspec.extractFiles(rockspec)
+	local files = rockspec.extractFiles(rock)
 	if #files == 0 then error("No files for " .. name .. "-" .. version, 0) end
 
-	local downloaded = download(rockspec.source, files)
+	local downloaded = download(rock.source, files)
 
-	if not downloaded then error("Cannot find downloader for " .. rockspec.source.url, 0) end
+	if not downloaded then error("Cannot find downloader for " .. rock.source.url, 0) end
 
 	local dir = fs.combine(patchDirectory, "rocks-original/" .. name)
 	for name, contents in pairs(downloaded) do
@@ -42,6 +42,8 @@ local function execute(name, version)
 	end
 
 	data.version = version
+	data.dependencies = rock.dependencies
+	if not data.type then data.type = "patch" end
 	fileWrapper.write(info, serialize.serialize(data))
 
 	print("Run 'apply-patches " .. name .. "' to apply")

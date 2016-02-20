@@ -5,6 +5,7 @@ local function addCommand(command)
 end
 
 local printColoured = require "bsrocks.lib.utils".printColoured
+local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 
 -- Primary packages
 addCommand(require "bsrocks.commands.dumpsettings")
@@ -12,11 +13,13 @@ addCommand(require "bsrocks.commands.install")
 addCommand(require "bsrocks.commands.list")
 addCommand(require "bsrocks.commands.search")
 
--- Admin packages
-addCommand(require "bsrocks.commands.applypatches")
-addCommand(require "bsrocks.commands.exec")
-addCommand(require "bsrocks.commands.fetch")
-addCommand(require "bsrocks.commands.makepatches")
+-- Install admin packages if we have a patch directory
+if fs.exists(patchDirectory) then
+	addCommand(require "bsrocks.commands.applypatches")
+	addCommand(require "bsrocks.commands.exec")
+	addCommand(require "bsrocks.commands.fetch")
+	addCommand(require "bsrocks.commands.makepatches")
+end
 
 addCommand({
 	name = "help",
@@ -46,11 +49,11 @@ if not foundCommand then
 	for cmd, _ in pairs(commands) do
 		if match(cmd, command) > 0 then
 			if not printDid then
-				print("Did you mean: ")
+				printColoured("Did you mean: ", colours.yellow)
 				printDid = true
 			end
 
-			print(cmd)
+			printColoured("  " .. cmd, colours.orange)
 		end
 	end
 	error("No such command", 0)
