@@ -3,6 +3,7 @@
 -- Some elements are duplicated in /rom/apis/io but this is a more accurate representation
 
 local utils = require "bsrocks.lib.utils"
+local ansi = require "bsrocks.env.ansi"
 local checkType = utils.checkType
 
 local function isFile(file)
@@ -109,7 +110,7 @@ return function(env)
 				close = close,
 				flush = void,
 				read = read, readLine = read, readAll = read,
-				write = function(arg) write(arg) end,
+				write = function(arg) ansi.write(arg) end,
 			}
 		}, fileMeta)
 
@@ -121,7 +122,7 @@ return function(env)
 				write = function(arg)
 					local c = term.isColor()
 					if c then term.setTextColor(colors.red) end
-					write(arg)
+					ansi.write(arg)
 					if c then term.setTextColor(colors.white) end
 				end,
 			}
@@ -211,6 +212,9 @@ return function(env)
  	function io.write(...)
  		return env.stdout:write(...)
  	end
+
+	env._G.write = io.write
+	env._G.print = ansi.print
 
  	-- Delete temp files
 	env.cleanup[#env.cleanup + 1] = function()
