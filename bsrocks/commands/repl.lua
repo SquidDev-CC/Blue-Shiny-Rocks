@@ -54,9 +54,7 @@ local function serialize(t)
 	return serializeImpl(t, {}, "")
 end
 
-local function execute(...)
-	if next({...}) then error("Do not pass arguments to the repl", 0) end
-
+local function execute()
 	local running = true
 	local thisEnv = env()._G
 
@@ -64,6 +62,10 @@ local function execute(...)
 		__tostring = function() return "Call exit() to exit" end,
 		__call = function() running = false end,
 	})
+
+	-- As per @demhydraz's suggestion. Because the prompt uses Out[n] as well
+	local output = {}
+	thisEnv.Out = output
 
 	local inputColour, outputColour, textColour = colours.green, colours.cyan, term.getTextColour()
 	if not term.isColour() then
@@ -91,6 +93,7 @@ local function execute(...)
 	local function setOutput(out)
 		thisEnv._ = out
 		thisEnv['_' .. counter] = out
+		output[counter] = out
 
 		term.setTextColour(outputColour)
 		write("Out[" .. counter .. "]: ")
@@ -168,9 +171,17 @@ local function execute(...)
 	end
 end
 
+local description = [[
+This is almost identical to the built in Lua program with some simple differences.
+
+Scripts are run in an environment similar to the exec command.
+
+The result of the previous outputs are also stored in variables of the form _idx (the last result is also stored in _). For example: if Out[1] = 123 then _1 = 123 and _ = 123 
+]]
 return {
 	name = "repl",
 	help = "Run a Lua repl in an emulated environment",
 	syntax = "",
+	description = description,
 	execute = execute,
 }

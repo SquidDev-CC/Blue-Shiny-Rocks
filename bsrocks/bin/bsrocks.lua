@@ -22,42 +22,62 @@ if fs.exists(patchDirectory) then
 	addCommand(require "bsrocks.commands.admin.makepatches")
 end
 
+local function getCommand(command)
+	local foundCommand = commands[command]
+
+	if not foundCommand then
+		-- No such command, print a list of suggestions
+		printError("Cannot find '" .. command .. "'.")
+		local match = require "bsrocks.lib.diffmatchpatch".match_main
+
+		local printDid = false
+		for cmd, _ in pairs(commands) do
+			if match(cmd, command) > 0 then
+				if not printDid then
+					printColoured("Did you mean: ", colours.yellow)
+					printDid = true
+				end
+
+				printColoured("  " .. cmd, colours.orange)
+			end
+		end
+		error("No such command", 0)
+	else
+		return foundCommand
+	end
+end
+
 addCommand({
 	name = "help",
-	help = "Print this text",
-	syntax = "",
-	execute = function()
-		printColoured("bsrocks <command> [args]", colours.cyan)
-		printColoured("Available commands", colours.lightGrey)
-		for _, command in pairs(commands) do
-			print("  " .. command.name .. " " .. command.syntax)
-			printColoured("    " .. command.help, colours.lightGrey)
+	help = "Provide help for a command",
+	syntax = "[command]",
+	description = "  [command]  The command to get help for. Leave blank to get some basic help for all commands.",
+	execute = function(cmd)
+		if cmd then
+			local command = getCommand(cmd)
+			print(command.help)
+
+			if command.syntax ~= "" then
+				printColoured("Synopsis", colours.orange)
+				printColoured("  " .. command.name .. " " .. command.syntax, colours.lightGrey)
+			end
+
+			if command.description then
+				printColoured("Description", colours.orange)
+				local description = command.description:gsub("^\n+", ""):gsub("\n+$", "")
+				printColoured(description, colours.lightGrey)
+			end
+		else
+			printColoured("bsrocks <command> [args]", colours.cyan)
+			printColoured("Available commands", colours.lightGrey)
+			for _, command in pairs(commands) do
+				print("  " .. command.name .. " " .. command.syntax)
+				printColoured("    " .. command.help, colours.lightGrey)
+			end
 		end
 	end,
 })
 
 -- Default to printing help messages
-local command = ... or "help"
-
-local foundCommand = commands[command]
-
-if not foundCommand then
-	-- No such command, print a list of suggestions
-	printError("Cannot find '" .. command .. "'.")
-	local match = require "bsrocks.lib.diffmatchpatch".match_main
-
-	local printDid = false
-	for cmd, _ in pairs(commands) do
-		if match(cmd, command) > 0 then
-			if not printDid then
-				printColoured("Did you mean: ", colours.yellow)
-				printDid = true
-			end
-
-			printColoured("  " .. cmd, colours.orange)
-		end
-	end
-	error("No such command", 0)
-else
-	return foundCommand.execute(select(2, ...))
-end
+local foundCommand = getCommand(... or "help")
+return foundCommand.execute(select(2, ...))

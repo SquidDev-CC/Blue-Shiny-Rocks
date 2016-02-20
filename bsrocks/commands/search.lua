@@ -48,9 +48,15 @@ local function execute(search)
 	end
 end
 
+local description = [[
+  <name>  The name of the package to search for.
+
+If the package cannot be found, it will query for packages with similar names.
+]]
 return {
 	name = "search",
 	help = "Search for a package",
+	description = description,
 	syntax = "<name>",
 	execute = execute,
 }
