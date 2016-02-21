@@ -32,7 +32,7 @@ local function getInstalled()
 		fetched = true
 
 		for name, version in pairs(settings.existing) do
-			installed[name] = { version = version, package = name }
+			installed[name] = { version = version, package = name, builtin = true }
 		end
 
 		if fs.exists(installDirectory) then

@@ -1,5 +1,3 @@
-local escapePattern = require "bsrocks.lib.utils".escapePattern
-
 local function read(file)
 	local handle = fs.open(file, "r")
 	local contents = handle.readAll()
@@ -20,7 +18,7 @@ local function assertExists(file, name, level)
 end
 
 local function readDir(directory)
-	local escapeP = "^" .. escapePattern(directory)
+	local len = #directory + 1
 	local stack, n = { directory }, 1
 
 	local files = {}
@@ -35,7 +33,7 @@ local function readDir(directory)
 				stack[n] = fs.combine(top, file)
 			end
 		else
-			files[top:gsub(escapeP, "")] = read(top)
+			files[top:sub(len)] = read(top)
 		end
 	end
 

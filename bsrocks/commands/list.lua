@@ -4,9 +4,11 @@ local printColoured = require "bsrocks.lib.utils".printColoured
 
 local function execute()
 	for _, data in pairs(install.getInstalled()) do
-		print(data.package .. ": " .. data.version)
-		if data.description and data.description.summary then
-			printColoured("  " .. data.description.summary, colours.lightGrey)
+		if not data.builtin then
+			print(data.package .. ": " .. data.version)
+			if data.description and data.description.summary then
+				printColoured("  " .. data.description.summary, colours.lightGrey)
+			end
 		end
 	end
 end
