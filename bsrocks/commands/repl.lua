@@ -89,7 +89,7 @@ local function execute()
 		printError(" " .. message)
 	end
 
-	local function execute(lines)
+	local function execute(lines, force)
 		local buffer = table.concat(lines, "\n")
 		local forcePrint = false
 		local func, err = load(buffer, "lua", "t", thisEnv)
@@ -112,7 +112,7 @@ local function execute()
 				local success, message = pcall(parse.parse, tokens)
 
 				if not success then
-					if tokens.pointer >= #tokens.tokens then
+					if not force and tokens.pointer >= #tokens.tokens then
 						return false
 					else
 						local token = tokens.tokens[tokens.pointer]
@@ -139,6 +139,7 @@ local function execute()
 
 	local lines = {}
 	local input = "In [" .. counter .. "]: "
+	local isEmpty = false
 	while running do
 		term.setTextColour(inputColour)
 		write(input)
@@ -156,6 +157,7 @@ local function execute()
 
 			history[#history + 1] = line
 			lines[#lines + 1] = line
+			isEmpty = false
 
 			if execute(lines) then
 				lines = {}
@@ -163,6 +165,13 @@ local function execute()
 			else
 				input = (" "):rep(#tostring(counter) + 3) .. "... "
 			end
+		elseif isEmpty then
+			execute(lines, true)
+			lines = {}
+			isEmpty = false
+			input = "In [" .. counter .. "]: "
+		else
+			isEmpty = true
 		end
 	end
 end
