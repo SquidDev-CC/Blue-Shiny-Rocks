@@ -10,7 +10,7 @@ local currentSettings = {
 	tries = 3,
 	existing = {
 		lua = "5.1",
-		bit32 = "999",
+		bit32 = "5.2.2-1", -- https://luarocks.org/modules/siffiejoe/bit32
 	},
 	libPath = "/rocks/lib/?.lua;/rocks/lib/?;/rocks/lib/?/init.lua",
 	binPath = "/rocks/bin/?.lua;/rocks/bin/?",

@@ -1,58 +1,6 @@
 local env = require "bsrocks.env"
-
-local keywords = {
-	[ "and" ] = true, [ "break" ] = true, [ "do" ] = true, [ "else" ] = true,
-	[ "elseif" ] = true, [ "end" ] = true, [ "false" ] = true, [ "for" ] = true,
-	[ "function" ] = true, [ "if" ] = true, [ "in" ] = true, [ "local" ] = true,
-	[ "nil" ] = true, [ "not" ] = true, [ "or" ] = true, [ "repeat" ] = true, [ "return" ] = true,
-	[ "then" ] = true, [ "true" ] = true, [ "until" ] = true, [ "while" ] = true,
-}
-
-local function serializeImpl(t, tracking, indent)
-	local objType = type(t)
-	if objType == "table" and not tracking[t] then
-		tracking[t] = true
-
-		if next(t) == nil then
-			return "{}"
-		else
-			local result, n = {"{\n"}, 1
-			local subIndent = indent .. "  "
-			local seen = {}
-			for k,v in ipairs(t) do
-				seen[k] = true
-				n = n + 1
-				result[n] = subIndent .. serializeImpl( v, tracking, subIndent ) .. ",\n"
-			end
-			for k,v in pairs(t) do
-				if not seen[k] then
-					local entry
-					if type(k) == "string" and not keywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
-						entry = k .. " = " .. serializeImpl(v, tracking, subIndent) .. ",\n"
-					else
-						entry = "[ " .. serializeImpl(k, tracking, subIndent) .. " ] = " .. serializeImpl(v, tracking, subIndent) .. ",\n"
-					end
-
-					n = n + 1
-					result[n] = subIndent .. entry
-				end
-			end
-
-			n = n + 1
-			result[n] = indent .. "}"
-			return table.concat(result)
-		end
-
-	elseif objType == "string" then
-		return string.format("%q", t)
-	else
-		return tostring(t)
-	end
-end
-
-local function serialize(t)
-	return serializeImpl(t, {}, "")
-end
+local serialize = require "bsrocks.lib.dump"
+local parse = require "bsrocks.lib.parse"
 
 local function execute()
 	local running = true
@@ -68,9 +16,12 @@ local function execute()
 	thisEnv.Out = output
 
 	local inputColour, outputColour, textColour = colours.green, colours.cyan, term.getTextColour()
+	local codeColour, pointerColour = colours.lightGrey, colours.lightBlue
 	if not term.isColour() then
 		inputColour = colours.white
 		outputColour = colours.white
+		codeColour = colours.white
+		pointerColour = colours.white
 	end
 
 	local autocomplete = nil
@@ -90,7 +41,7 @@ local function execute()
 	local counter = 1
 
 	--- Prints an output and sets the output variable
-	local function setOutput(out)
+	local function setOutput(out, length)
 		thisEnv._ = out
 		thisEnv['_' .. counter] = out
 		output[counter] = out
@@ -104,7 +55,7 @@ local function execute()
 			if type(meta) == "table" and type(meta.__tostring) == "function" then
 				print(tostring(out))
 			else
-				print(serialize(out))
+				print(serialize(out, length))
 			end
 		else
 			print(serialize(out))
@@ -122,16 +73,75 @@ local function execute()
 			elseif len == 1 then
 				setOutput(...)
 			else
-				setOutput({...})
+				setOutput({...}, len)
 			end
 		else
 			printError(...)
 		end
 	end
 
+	local function handleError(lines, line, column, message)
+		local contents = lines[line]
+		term.setTextColour(codeColour)
+		print(" " .. contents)
+		term.setTextColour(pointerColour)
+		print((" "):rep(column) .. "^ ")
+		printError(" " .. message)
+	end
+
+	local function execute(lines)
+		local buffer = table.concat(lines, "\n")
+		local forcePrint = false
+		local func, err = load(buffer, "lua", "t", thisEnv)
+		local func2, err2 = load("return " .. buffer, "lua", "t", thisEnv)
+		if not func then
+			if func2 then
+				func = func2
+				forcePrint = true
+			else
+				local success, tokens = pcall(parse.lex, buffer)
+				if not success then
+					print(tokens)
+					local line, column, message = tokens:match("(%d+):(%d+):(.+)")
+					if line then
+						handleError(lines, tonumber(line), tonumber(column), message)
+						return true
+					end
+				end
+
+				local success, message = pcall(parse.parse, tokens)
+
+				if not success then
+					if tokens.pointer >= #tokens.tokens then
+						return false
+					else
+						local token = tokens.tokens[tokens.pointer]
+						handleError(lines, token.line, token.char, message)
+						return true
+					end
+				end
+			end
+		else
+			if func2 then
+				func = func2
+			end
+		end
+
+		if func then
+			handle(forcePrint, pcall(func))
+		else
+			printError(err)
+		end
+
+		counter = counter + 1
+		return true
+	end
+
+	local lines = {}
+	local input = "In [" .. counter .. "]: "
 	while running do
 		term.setTextColour(inputColour)
-		write("In [" .. counter .. "]: ")
+		write(input)
 		term.setTextColour(textColour)
 
 		local line = read(nil, history, autocomplete)
@@ -145,28 +155,14 @@ local function execute()
 			end
 
 			history[#history + 1] = line
+			lines[#lines + 1] = line
 
-			local forcePrint = false
-			local func, err = load(line, "lua", "t", thisEnv)
-			local func2, err2 = load("return " .. line, "lua", "t", thisEnv)
-			if not func then
-				if func2 then
-					func = func2
-					forcePrint = true
-				end
+			if execute(lines) then
+				lines = {}
+				input = "In [" .. counter .. "]: "
 			else
-				if func2 then
-					func = func2
-				end
+				input = (" "):rep(#tostring(counter) + 3) .. "... "
 			end
-
-			if func then
-				handle(forcePrint, pcall(func))
-			else
-				printError(err)
-			end
-
-			counter = counter + 1
 		end
 	end
 end
@@ -176,7 +172,7 @@ This is almost identical to the built in Lua program with some simple difference
 
 Scripts are run in an environment similar to the exec command.
 
-The result of the previous outputs are also stored in variables of the form _idx (the last result is also stored in _). For example: if Out[1] = 123 then _1 = 123 and _ = 123 
+The result of the previous outputs are also stored in variables of the form _idx (the last result is also stored in _). For example: if Out[1] = 123 then _1 = 123 and _ = 123
 ]]
 return {
 	name = "repl",
