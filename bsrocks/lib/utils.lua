@@ -84,12 +84,80 @@ local function escapePattern(pattern)
 	return (pattern:gsub(".", matches))
 end
 
+local term = term
+local function printIndent(text, indent)
+	if type(text) ~= "string" then error("string expected, got " .. type(text), 2) end
+	if type(indent) ~= "number" then error("number expected, got " .. type(indent), 2) end
+	if stdout and stdout.isPiped then
+		return stdout.writeLine(text)
+	end
+
+	local w, h = term.getSize()
+	local x, y = term.getCursorPos()
+
+	term.setCursorPos(indent + 1, y)
+
+	local function newLine()
+		if y + 1 <= h then
+			term.setCursorPos(indent + 1, y + 1)
+		else
+			term.setCursorPos(indent + 1, h)
+			term.scroll(1)
+		end
+		x, y = term.getCursorPos()
+	end
+
+	-- Print the line with proper word wrapping
+	while #text > 0 do
+		local whitespace = text:match("^[ \t]+")
+		if whitespace then
+			-- Print whitespace
+			term.write(whitespace)
+			x, y = term.getCursorPos()
+			text = text:sub(#whitespace + 1 )
+		end
+
+		if text:sub(1, 1) == "\n" then
+			-- Print newlines
+			newLine()
+			text = text:sub(2)
+		end
+
+		local subtext = text:match("^[^ \t\n]+")
+		if subtext then
+			text = text:sub(#subtext + 1)
+			if #subtext > w then
+				-- Print a multiline word
+				while #subtext > 0 do
+					if x > w then newLine() end
+					term.write(subtext)
+					subtext = subtext:sub((w-x) + 2)
+					x, y = term.getCursorPos()
+				end
+			else
+				-- Print a word normally
+				if x + #subtext - 1 > w then newLine() end
+				term.write(subtext)
+				x, y = term.getCursorPos()
+			end
+		end
+	end
+
+	if y + 1 <= h then
+		term.setCursorPos(1, y + 1)
+	else
+		term.setCursorPos(1, h)
+		term.scroll(1)
+	end
+end
+
 
 return {
 	checkType = checkType,
+	escapePattern = escapePattern,
+	log = log,
+	printColoured = printColoured,
+	printIndent = printIndent,
 	tmpName = tmpName,
 	traceback = traceback,
-	printColoured = printColoured,
-	log = log,
-	escapePattern = escapePattern,
 }

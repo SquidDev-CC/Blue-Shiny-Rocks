@@ -1,5 +1,7 @@
 local diff = require "bsrocks.lib.diffmatchpatch"
 local unserialize = require "bsrocks.lib.serialize".unserialize
+local fileWrapper = require "bsrocks.lib.files"
+local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 
 local cache = {}
 local function fetchPatchspec(servers, name)
@@ -19,6 +21,23 @@ local function fetchPatchspec(servers, name)
 
 	cache[name] = result
 	return result
+end
+
+local installed = nil
+local function getAll()
+	if not installed then
+		installed = {}
+		local dir = fs.combine(patchDirectory, "rocks")
+		for _, file in ipairs(fs.list(dir)) do
+			if file:match("%.patchspec$") then
+				local path = fs.combine(dir, file)
+				local patchspec = unserialize(fileWrapper.read(path))
+				installed[file:gsub("%.patchspec$", "")] = patchspec
+			end
+		end
+	end
+
+	return installed
 end
 
 local function makePatches(original, changed)
@@ -109,4 +128,5 @@ return {
 	fetchPatchspec = fetchPatchspec,
 	makePatches = makePatches,
 	applyPatches = applyPatches,
+	getAll = getAll,
 }

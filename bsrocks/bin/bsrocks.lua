@@ -4,7 +4,8 @@ local function addCommand(command)
 	commands[command.name] = command
 end
 
-local printColoured = require "bsrocks.lib.utils".printColoured
+local utils = require "bsrocks.lib.utils"
+local printColoured, printIndent = utils.printColoured, utils.printIndent
 local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 
 -- Primary packages
@@ -17,9 +18,10 @@ addCommand(require "bsrocks.commands.repl")
 
 -- Install admin packages if we have a patch directory
 if fs.exists(patchDirectory) then
-	addCommand(require "bsrocks.commands.admin.applypatches")
+	addCommand(require "bsrocks.commands.admin.add")
+	addCommand(require "bsrocks.commands.admin.apply")
 	addCommand(require "bsrocks.commands.admin.fetch")
-	addCommand(require "bsrocks.commands.admin.makepatches")
+	addCommand(require "bsrocks.commands.admin.make")
 end
 
 local function getCommand(command)
@@ -65,7 +67,13 @@ addCommand({
 			if command.description then
 				printColoured("Description", colours.orange)
 				local description = command.description:gsub("^\n+", ""):gsub("\n+$", "")
-				printColoured(description, colours.lightGrey)
+
+				if term.isColor() then term.setTextColour(colours.lightGrey) end
+				for line in (description .. "\n"):gmatch("([^\n]*)\n") do
+					local _, indent = line:find("^(%s*)")
+					printIndent(line:sub(indent + 1), indent)
+				end
+				if term.isColor() then term.setTextColour(colours.white) end
 			end
 		else
 			printColoured("bsrocks <command> [args]", colours.cyan)
@@ -80,4 +88,13 @@ addCommand({
 
 -- Default to printing help messages
 local foundCommand = getCommand(... or "help")
-return foundCommand.execute(select(2, ...))
+local args = {...}
+xpcall(
+	function()
+		return foundCommand.execute(select(2, unpack(args)))
+	end,
+	function(message)
+		printError(message)
+		print(utils.traceback())
+	end
+)

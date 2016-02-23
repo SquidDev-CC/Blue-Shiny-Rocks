@@ -50,6 +50,10 @@ local escapes = {
 	['107'] = create(setBack, colours.white),
 }
 local function writeAnsi(str)
+	if stdout and stdout.isPiped then
+		return stdout.write(text)
+	end
+
 	if type(str) ~= "string" then
 		error("bad argument #1 (string expected, got " .. type(ansi) .. ")", 2)
 	end

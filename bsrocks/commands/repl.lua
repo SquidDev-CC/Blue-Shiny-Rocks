@@ -25,7 +25,7 @@ local function execute()
 	end
 
 	local autocomplete = nil
-	if settings.get("lua.autocomplete") then
+	if not settings or settings.get("lua.autocomplete") then
 		autocomplete = function(line)
 			local start = line:find("[a-zA-Z0-9_%.]+$")
 			if start then
