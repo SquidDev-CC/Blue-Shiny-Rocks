@@ -28,7 +28,7 @@ local function save(rockS, patchS)
 
 	if patchS then
 		local patchFiles = rockspec.extractFiles(patchS)
-		local downloadPatch = tree(patchFiles.server .. '/' .. rockS.name, patchFiles)
+		local downloadPatch = tree(patchFiles.server .. rockS.name, patchFiles)
 
 		files = applyPatches(downloaded, downloadPatch, patchS.patches or {}, patchS.added or {}, patchS.removed or {})
 	end
@@ -63,7 +63,7 @@ local function install(name, version, constraints)
 	-- Do the cheapest action ASAP
 	local installed = getInstalled()
 	local current = installed[name]
-	if current and (version == nil or current.version == version) then
+	if current and ((version == nil and constraints == nil) or current.version == version) then
 		error("Already installed", 0)
 	end
 
@@ -96,7 +96,8 @@ local function install(name, version, constraints)
 		if current then
 			local version = dependencies.parseVersion(current.version)
 			if not dependencies.matchConstraints(version, dependency.constraints) then
-				log("Should update " .. dependency.name .. " ( got " .. current.version .. ", need " .. deps .. ")")
+				log("Updating dependency " .. name)
+				install(name, nil, dependency.constraints)
 			end
 		else
 			log("Installing dependency " .. name)

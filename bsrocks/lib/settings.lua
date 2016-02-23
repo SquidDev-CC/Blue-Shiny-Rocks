@@ -2,6 +2,7 @@ local currentSettings = {
 	patchDirectory = "/rocks-patch",
 	installDirectory = "/rocks",
 	servers = {
+		'https://raw.githubusercontent.com/SquidDev-CC/Blue-Shiny-Rocks/rocks/',
 		'http://luarocks.org/repositories/rocks/',
 	},
 	patchServers = {
