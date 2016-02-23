@@ -9,12 +9,13 @@ local printColoured, printIndent = utils.printColoured, utils.printIndent
 local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 
 -- Primary packages
+addCommand(require "bsrocks.commands.desc")
 addCommand(require "bsrocks.commands.dumpsettings")
+addCommand(require "bsrocks.commands.exec")
 addCommand(require "bsrocks.commands.install")
 addCommand(require "bsrocks.commands.list")
-addCommand(require "bsrocks.commands.search")
-addCommand(require "bsrocks.commands.exec")
 addCommand(require "bsrocks.commands.repl")
+addCommand(require "bsrocks.commands.search")
 
 -- Install admin packages if we have a patch directory
 if fs.exists(patchDirectory) then

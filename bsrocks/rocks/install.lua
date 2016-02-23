@@ -61,8 +61,8 @@ end
 
 local function install(name, version, constraints)
 	-- Do the cheapest action ASAP
-	local versions = getInstalled()
-	local current = versions[name]
+	local installed = getInstalled()
+	local current = installed[name]
 	if current and (version == nil or current.version == version) then
 		error("Already installed", 0)
 	end
@@ -88,7 +88,6 @@ local function install(name, version, constraints)
 
 	local rockspec = rockspec.fetchRockspec(server, name, version)
 
-	local installed = getInstalled()
 	for _, deps in ipairs(rockspec.dependencies) do
 		local dependency = dependencies.parseDependency(deps)
 		local name = dependency.name
