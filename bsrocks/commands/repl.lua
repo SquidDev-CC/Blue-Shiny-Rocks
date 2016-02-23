@@ -11,6 +11,9 @@ local function execute()
 		__call = function() running = false end,
 	})
 
+	-- We need to pass through a secondary function to prevent tail calls
+	thisEnv._noTail = function(...) return ... end
+
 	-- As per @demhydraz's suggestion. Because the prompt uses Out[n] as well
 	local output = {}
 	thisEnv.Out = output
@@ -96,15 +99,21 @@ local function execute()
 		local func2, err2 = load("return " .. buffer, "lua", "t", thisEnv)
 		if not func then
 			if func2 then
-				func = func2
+				func = load("return _noTail(" .. buffer .. ")", "lua", "t", thisEnv)
 				forcePrint = true
 			else
 				local success, tokens = pcall(parse.lex, buffer)
 				if not success then
-					print(tokens)
-					local line, column, message = tokens:match("(%d+):(%d+):(.+)")
+					local line, column, resumable, message = tokens:match("(%d+):(%d+):([01]):(.+)")
 					if line then
-						handleError(lines, tonumber(line), tonumber(column), message)
+						if line == #lines and column > #lines[line] and resumable == 1  then
+							return false
+						else
+							handleError(lines, tonumber(line), tonumber(column), message)
+							return true
+						end
+					else
+						printError(tokens)
 						return true
 					end
 				end
@@ -121,19 +130,17 @@ local function execute()
 					end
 				end
 			end
-		else
-			if func2 then
-				func = func2
-			end
+		elseif func2 then
+			func = load("return _noTail(" .. buffer .. ")", "lua", "t", thisEnv)
 		end
 
 		if func then
 			handle(forcePrint, pcall(func))
+			counter = counter + 1
 		else
 			printError(err)
 		end
 
-		counter = counter + 1
 		return true
 	end
 

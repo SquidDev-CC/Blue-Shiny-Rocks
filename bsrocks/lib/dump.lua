@@ -43,7 +43,7 @@ local function serializeImpl(t, tracking, indent, length)
 		end
 
 	elseif objType == "string" then
-		return string.format("%q", t)
+		return (string.format("%q", t):gsub("\\\n", "\\n"))
 	else
 		return tostring(t)
 	end

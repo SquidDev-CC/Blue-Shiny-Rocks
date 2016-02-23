@@ -86,25 +86,6 @@ do
 		return self:Peek().Type == type
 	end
 
-	--- Save position in a stream
-	function TokenList:Save()
-		table.insert(self.savedPointers, self.pointer)
-	end
-
-	--- Remove the last position in the stream
-	function TokenList:Commit()
-		local savedPointers = self.savedPointers
-		savedPointers[#savedPointers] = nil
-	end
-
-	--- Restore to the previous save point
-	function TokenList:Restore()
-		local savedPointers = self.savedPointers
-		local sPLength = #savedPointers
-		self.pointer = savedP[sPLength]
-		savedPointers[sPLength] = nil
-	end
-
 	--- Check if the next token is a symbol and return it
 	-- @tparam string symbol Symbol to check (Optional)
 	-- @tparam table tokenList Add the token onto this table
@@ -204,8 +185,13 @@ local function lex(src)
 		end
 
 		--shared stuff
-		local function generateError(err)
-			error(line..":"..char..":"..err, 0)
+		local function generateError(err, resumable)
+			if resumable == true then
+				resumable = 1
+			else
+				resumable = 0
+			end
+			error(line..":"..char..":"..resumable..":"..err, 0)
 		end
 
 		local function tryGetLongString()
@@ -225,7 +211,7 @@ local function lex(src)
 					while true do
 						--check for eof
 						if peek() == '' then
-							generateError("Expected `]"..string.rep('=', equalsCount).."]` near <eof>.", 3)
+							generateError("Expected `]"..string.rep('=', equalsCount).."]` near <eof>.", true)
 						end
 
 						--check for the end
@@ -368,7 +354,9 @@ local function lex(src)
 					end
 					if consume('Ee') then
 						consume('+-')
-						while digits[peek()] do get() end
+
+						if not digits[peek()] then generateError("Expected exponent") end
+						repeat get() until not digits[peek()]
 					end
 
 					local n = peek():lower()
@@ -389,7 +377,7 @@ local function lex(src)
 						get() --get the escape char
 					elseif c == delim then
 						break
-					elseif c == '' then
+					elseif c == '' or c == '\n' then
 						generateError("Unfinished string near <eof>")
 					end
 				end
@@ -417,7 +405,7 @@ local function lex(src)
 				if consume('=') then
 					toEmit = {Type = 'Symbol', Data = '~='}
 				else
-					generateError("Unexpected symbol `~` in source.", 2)
+					generateError("Unexpected symbol `~` in source.")
 				end
 
 			elseif consume('.') then
@@ -447,7 +435,7 @@ local function lex(src)
 				if contents then
 					toEmit = {Type = 'String', Data = all, Constant = contents}
 				else
-					generateError("Unexpected Symbol `"..c.."` in source.", 2)
+					generateError("Unexpected Symbol `"..c.."` in source.")
 				end
 			end
 
@@ -464,7 +452,6 @@ local function lex(src)
 	--public interface:
 	local tokenList = setmetatable({
 		tokens = tokens,
-		savedPointers = {},
 		pointer = 1
 	}, {__index = TokenList})
 
