@@ -1,25 +1,32 @@
 local diff = require "bsrocks.lib.diffmatchpatch"
-local unserialize = require "bsrocks.lib.serialize".unserialize
 local fileWrapper = require "bsrocks.lib.files"
-local patchDirectory = require "bsrocks.lib.settings".patchDirectory
+local log = require "bsrocks.lib.utils".log
+local settings = require "bsrocks.lib.settings"
+local unserialize = require "bsrocks.lib.serialize".unserialize
+
+local patchDirectory, servers = settings.patchDirectory, settings.patchServers
 
 local cache = {}
-local function fetchPatchspec(servers, name)
+local function findPatchspec(name)
 	local result = cache[name] or false
 	if result then return result end
 
+	log("Fetching patchspec for " .. name)
+	local patchS = name .. ".patchspec"
+
 	for _, server in ipairs(servers) do
-		local handle = http.get(servers .. name)
+		local handle = http.get(server .. patchS)
 		if handle then
 			local contents = handle.readAll()
 			handle.close()
 
-			result = unserialize(contenets)
+			result = unserialize(contents)
+			result.server = server
 			break
 		end
 	end
 
-	cache[name] = result
+	cache[name] = result or false
 	return result
 end
 
@@ -38,6 +45,26 @@ local function getAll()
 	end
 
 	return installed
+end
+
+local function extractFiles(patch)
+	local files, n = {}, 0
+
+	if patch.added then
+		for _, file in ipairs(patch.added) do
+			n = n + 1
+			files[n] = file
+		end
+	end
+
+	if patch.patches then
+		for _, file in ipairs(patch.patches) do
+			n = n + 1
+			files[n] = file .. ".patch"
+		end
+	end
+
+	return files
 end
 
 local function makePatches(original, changed)
@@ -125,8 +152,9 @@ local function applyPatches(original, files, patches, added, removed)
 end
 
 return {
-	fetchPatchspec = fetchPatchspec,
+	findPatchspec = findPatchspec,
 	makePatches = makePatches,
 	applyPatches = applyPatches,
+	extractFiles = extractFiles,
 	getAll = getAll,
 }

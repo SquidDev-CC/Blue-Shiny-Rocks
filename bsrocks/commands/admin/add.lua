@@ -1,16 +1,13 @@
 local download = require "bsrocks.downloaders"
 local fileWrapper = require "bsrocks.lib.files"
+local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 local rockspec = require "bsrocks.rocks.rockspec"
 local serialize = require "bsrocks.lib.serialize"
-local settings = require "bsrocks.lib.settings"
-
-local patchDirectory = settings.patchDirectory
-local servers = settings.servers
 
 local function execute(name, version)
 	if not name then error("Expected name", 0) end
 
-	local server, manifest = rockspec.findRock(servers, name)
+	local server, manifest = rockspec.findRock(name)
 	if not server then
 		error("Cannot find '" .. name .. "'", 0)
 	end

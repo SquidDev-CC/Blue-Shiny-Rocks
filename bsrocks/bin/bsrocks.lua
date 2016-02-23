@@ -89,12 +89,4 @@ addCommand({
 -- Default to printing help messages
 local foundCommand = getCommand(... or "help")
 local args = {...}
-xpcall(
-	function()
-		return foundCommand.execute(select(2, unpack(args)))
-	end,
-	function(message)
-		printError(message)
-		print(utils.traceback())
-	end
-)
+return foundCommand.execute(select(2, unpack(args)))

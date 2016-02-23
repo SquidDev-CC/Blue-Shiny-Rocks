@@ -1,8 +1,8 @@
 --- A downloader for GitHub repositories
 
-local download = require "bsrocks.downloaders.download"
+local tree = require "bsrocks.downloaders.tree"
 
-return function(source, files, settings)
+return function(source, files)
 	local url = source.url
 	if not url then return end
 
@@ -15,5 +15,5 @@ return function(source, files, settings)
 	end
 
 	print("Downloading " .. repo .. "@" .. branch)
-	return download('https://raw.github.com/'..repo..'/'..branch..'/', files, settings.tries, settings.callback)
+	return tree('https://raw.github.com/'..repo..'/'..branch..'/', files)
 end

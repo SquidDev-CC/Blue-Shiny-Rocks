@@ -4,10 +4,7 @@ local log = require "bsrocks.lib.utils".log
 local patchspec = require "bsrocks.rocks.patchspec"
 local rockspec = require "bsrocks.rocks.rockspec"
 local serialize = require "bsrocks.lib.serialize"
-local settings = require "bsrocks.lib.settings"
-
-local patchDirectory = settings.patchDirectory
-local servers = settings.servers
+local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 
 local function execute(...)
 	local patched, force
@@ -38,7 +35,7 @@ local function execute(...)
 				error("Patchspec" .. name .. " has no version", 0)
 			end
 
-			local server, manifest = rockspec.findRock(servers, name)
+			local server, manifest = rockspec.findRock(name)
 			if not server then
 				error("Cannot find '" .. name .. "'", 0)
 			end

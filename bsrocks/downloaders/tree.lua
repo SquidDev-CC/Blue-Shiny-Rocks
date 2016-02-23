@@ -1,9 +1,24 @@
+local function callback(success, path, count, total)
+	if not success then
+		local x, y = term.getCursorPos()
+		term.setCursorPos(1, y)
+		term.clearLine()
+		printError("Cannot download " .. path)
+	end
+
+	local x, y = term.getCursorPos()
+	term.setCursorPos(1, y)
+	term.clearLine()
+	write(("Downloading: %s/%s (%s%%)"):format(count, total, count / total * 100))
+end
+
+local tries = require "bsrocks.lib.settings".tries
+
 --- Download individual files
 -- @tparam string prefix The url prefix to use
 -- @tparam table files The list of files to download
 -- @tparam int tries Number of times to attempt to download
--- @tparam (success:boolean, path:string, count:int, total:int)->nil callback Function to call on download progress
-return function(prefix, files, tries, callback)
+local function tree(prefix, files)
 	local result = {}
 
 	local count = 0
@@ -47,3 +62,5 @@ return function(prefix, files, tries, callback)
 
 	return result
 end
+
+return tree

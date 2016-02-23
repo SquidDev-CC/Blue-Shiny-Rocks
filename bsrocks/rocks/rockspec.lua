@@ -1,7 +1,8 @@
 local dependencies = require "bsrocks.rocks.dependencies"
 local fileWrapper = require "bsrocks.lib.files"
+local log = require "bsrocks.lib.utils".log
+local servers = require "bsrocks.lib.settings".servers
 local unserialize = require "bsrocks.lib.serialize".unserialize
-local utils = require "bsrocks.lib.utils"
 
 local manifestCache = {}
 local rockCache = {}
@@ -10,11 +11,11 @@ local function fetchManifest(server)
 	local manifest = manifestCache[server]
 	if manifest then return manifest end
 
-	utils.log("Fetching manifest " .. server)
+	log("Fetching manifest " .. server)
 
 	local handle = http.get(server .. "manifest-5.1")
 	if not handle then
-		error("Cannot fetch manifest: " .. server)
+		error("Cannot fetch manifest: " .. server, 0)
 	end
 
 	local contents = handle.readAll()
@@ -25,7 +26,7 @@ local function fetchManifest(server)
 	return manifest
 end
 
-local function findRock(servers, name)
+local function findRock(name)
 	for _, server in ipairs(servers) do
 		local manifest = fetchManifest(server)
 		if manifest.repository[name] then
@@ -62,11 +63,11 @@ local function fetchRockspec(repo, name, version)
 	local rockspec = rockCache[whole]
 	if rockspec then return rockspec end
 
-	utils.log("Fetching rockspec " .. whole)
+	log("Fetching rockspec " .. whole)
 
 	local handle = http.get(repo .. name .. '-' .. version .. '.rockspec')
 	if not handle then
-		error("Canot fetch " .. name .. "-" .. version .. " from " .. repo)
+		error("Canot fetch " .. name .. "-" .. version .. " from " .. repo, 0)
 	end
 
 	local contents = handle.readAll()
@@ -79,15 +80,18 @@ end
 
 --- Extract files to download from rockspec
 -- @see https://github.com/keplerproject/luarocks/wiki/Rockspec-format
-local function extractFiles(rockspec)
+local function extractFiles(rockspec, blacklist)
 	local files, fileN = {}, 0
+	blacklist = blacklist or {}
 
 	local build = rockspec.build
 	if build then
 		if build.modules then
 			for _, file in pairs(build.modules) do
-				fileN = fileN + 1
-				files[fileN] = file
+				if not blacklist[file] then
+					fileN = fileN + 1
+					files[fileN] = file
+				end
 			end
 		end
 
@@ -95,8 +99,10 @@ local function extractFiles(rockspec)
 		if build.install then
 			for _, install in pairs(build.install) do
 				for _, file in pairs(install) do
-					fileN = fileN + 1
-					files[fileN] = file
+					if not blacklist[file] then
+						fileN = fileN + 1
+						files[fileN] = file
+					end
 				end
 			end
 		end
