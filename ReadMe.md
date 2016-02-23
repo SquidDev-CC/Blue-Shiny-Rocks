@@ -17,12 +17,20 @@ The LuaRocks implementation is very minimal:
  - Currently only supports downloading GitHub repositories
  - Only pure Lua libraries are supported
 
+## Getting started
+ - First install with Howl's webbuild: `pastebin run RcfW98XL SquidDev-CC/Blue-Shiny-Rocks -t build --once`
+ - Grab either `build/bsrocks.lua` or `build/bsrocks.min.lua`. We'll call this file `bsrocks`.
+ - Look for a package: `bsrocks search colours`
+ - Check it is the one you want: `bsrocks desc ansicolors`
+ - Install it: `bsrocks install ansicolors`
+ - Use it: `bsrocks repl` or `bsrocks exec myFile.lua`
+
+You can also run `bsrocks help` for more information.
+
 ## Patchspec
 The LuaRocks library also downloads "patchspec"s. These define modifications
 required for a library to work in CC. The next big stage of this project is to
-write ports and patches for key libraries:
- - [LuaFileSystem](https://keplerproject.github.io/luafilesystem/)
- - [Penlight](https://github.com/stevedonovan/Penlight)
+write ports and patches for key libraries.
 
 The ultimate aim is to be able to run most pure Lua libraries with minimal, or no
 patching. The repository for custom Lua ports and patchspecs is on a

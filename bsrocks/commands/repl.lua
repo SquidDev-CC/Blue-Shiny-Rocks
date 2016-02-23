@@ -153,6 +153,7 @@ local function execute()
 		term.setTextColour(textColour)
 
 		local line = read(nil, history, autocomplete)
+		if not line then return end
 
 		if #line:gsub("%s", "") > 0 then
 			for i = #history, 1, -1 do
@@ -172,13 +173,11 @@ local function execute()
 			else
 				input = (" "):rep(#tostring(counter) + 3) .. "... "
 			end
-		elseif isEmpty then
+		else
 			execute(lines, true)
 			lines = {}
 			isEmpty = false
 			input = "In [" .. counter .. "]: "
-		else
-			isEmpty = true
 		end
 	end
 end

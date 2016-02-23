@@ -32,6 +32,7 @@ Tasks:Task "license" (function(_, _, file, dest)
 	local handle = fs.open(File(dest), "w")
 	handle.write(contents)
 	handle.close()
+
 end):Maps("wild:*.un.lua", "wild:*.lua")
 	:Description "Append a license to a file"
 
@@ -39,5 +40,11 @@ Tasks:Task "licenses" {}
 	:Requires { "build/bsrocks.lua", "build/bsrocks.min.lua" }
 	:Description "Generate licensed files"
 
-Tasks:Task "build" {"clean", "licenses"} :Description "Main build task"
+Tasks:Task "cleanup" (function()
+	fs.delete(File "build/bsrocks.un.lua")
+	fs.delete(File "build/bsrocks.min.un.lua")
+end):Description "Destory unlicensed files"
+
+
+Tasks:Task "build" {"clean", "licenses", "cleanup"} :Description "Main build task"
 Tasks:Default "build"

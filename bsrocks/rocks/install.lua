@@ -23,7 +23,7 @@ local function save(rockS, patchS)
 	local downloaded = download(rockS.source, files)
 
 	if not downloaded then
-		error("Cannot find downloader for " .. rockS.source.url, 0)
+		error("Cannot find downloader for " .. rockS.source.url .. ". . Please suggest this package to be patched.", 0)
 	end
 
 	if patchS then
@@ -87,6 +87,10 @@ local function install(name, version, constraints)
 	end
 
 	local rockspec = rockspec.fetchRockspec(server, name, version)
+
+	if rockspec.build and rockspec.build.type ~= "builtin" then
+		error("Cannot build type '" .. rockspec.build.type .. "'. Please suggest this package to be patched.", 0)
+	end
 
 	for _, deps in ipairs(rockspec.dependencies) do
 		local dependency = dependencies.parseDependency(deps)

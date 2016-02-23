@@ -25,7 +25,9 @@ local function execute(name)
 	end
 
 	write(name .. ": " .. spec.version .. " ")
-	if isInstalled then
+	if spec.builtin then
+		printColoured("Built In", colours.magenta)
+	elseif isInstalled then
 		printColoured("Installed", colours.green)
 	else
 		printColoured("Not installed", colours.red)
@@ -68,6 +70,8 @@ local function execute(name)
 				local version = dependencies.parseVersion(current.version)
 				if not dependencies.matchConstraints(version, dependency.constraints) then
 					printColoured("Out of date", colours.yellow)
+				elseif current.builtin then
+					printColoured("Built In", colours.magenta)
 				else
 					printColoured("Installed", colours.green)
 				end
