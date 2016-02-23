@@ -90,7 +90,7 @@ local function parseVersion(vstring)
 	vstring = vstring:match("^%s*(.*)%s*$")
 	local main, revision = vstring:match("(.*)%-(%d+)$")
 
-	local version = {}
+	local version = {name=vstring}
 	local i = 1
 
 	if revision then

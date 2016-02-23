@@ -41,20 +41,23 @@ local function latestVersion(manifest, name, constraints)
 	local module = manifest.repository[name]
 	if not module then error("Cannot find " .. name) end
 
+	local version
 	for name, dat in pairs(module) do
+		local ver = dependencies.parseVersion(name)
 		if constraints then
-			local ver = dependencies.parseVersion(name)
 			if dependencies.matchConstraints(ver, constraints) then
-				version = name
+				if not version or ver > version then
+					version = ver
+				end
 			end
-		else
-			version = name
+		elseif not version or ver > version then
+			version = ver
 		end
 	end
 
 	if not version then error("Cannot find version for " .. name) end
 
-	return version
+	return version.name
 end
 
 local function fetchRockspec(repo, name, version)

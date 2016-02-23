@@ -43,14 +43,14 @@ local function getInstalled()
 		fetched = true
 
 		for name, version in pairs(settings.existing) do
-			installed[name] = { version = version, package = name, builtin = true }
+			installed[name:lower()] = { version = version, package = name, builtin = true }
 		end
 
 		if fs.exists(installDirectory) then
 			for _, file in ipairs(fs.list(installDirectory)) do
 				if file:match("%.rockspec") then
 					local data = serialize.unserialize(fileWrapper.read(fs.combine(installDirectory, file)))
-					installed[data.package] = data
+					installed[data.package:lower()] = data
 				end
 			end
 		end
@@ -60,6 +60,8 @@ local function getInstalled()
 end
 
 local function install(name, version, constraints)
+	name = name:lower()
+
 	-- Do the cheapest action ASAP
 	local installed = getInstalled()
 	local current = installed[name]
@@ -94,7 +96,7 @@ local function install(name, version, constraints)
 
 	for _, deps in ipairs(rockspec.dependencies) do
 		local dependency = dependencies.parseDependency(deps)
-		local name = dependency.name
+		local name = dependency.name:lower()
 		local current = installed[name]
 
 		if current then
