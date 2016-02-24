@@ -7,7 +7,8 @@ This stores patches and rewrites of Lua libraries for BSRocks.
 ## Getting started
  - Install Blue-Shiny-Rocks: [see here](https://github.com/SquidDev-CC/Blue-Shiny-Rocks#patchspec) on how to do that.
  - You'll need to create a patch directory (`/rocks-patch`) for the admin commands to become available. The easiest way is to clone the repository:
-   - `git clone https://github.com/SquidDev-CC/Blue-Shiny-Rocks.git rocks-patch`
+   - `mkdir rocks-patch && cs rocks-patch`
+   - `git clone https://github.com/SquidDev-CC/Blue-Shiny-Rocks.git rocks`
    - `git checkout rocks`
  - Add a patch target: `bsrocks add-patchspec <package>`
  - Fetch the sources: `bsrocks fetch <package>`
