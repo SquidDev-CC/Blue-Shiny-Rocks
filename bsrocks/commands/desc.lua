@@ -18,12 +18,12 @@ local function execute(name)
 
 	if not spec then
 		isInstalled = false
-		local server, manifest = rockspec.findRock(name)
+		local manifest = rockspec.findRockspec(name)
 
-		if not server then error("Cannot find '" .. name .. "'", 0) end
+		if not manifest then error("Cannot find '" .. name .. "'", 0) end
 
 		local version = rockspec.latestVersion(manifest, name)
-		spec = rockspec.fetchRockspec(server, name, version)
+		spec = rockspec.fetchRockspec(manifest.server, name, version)
 	end
 
 	write(name .. ": " .. spec.version .. " ")

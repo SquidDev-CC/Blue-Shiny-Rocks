@@ -5,14 +5,11 @@ local currentSettings = {
 		'https://raw.githubusercontent.com/SquidDev-CC/Blue-Shiny-Rocks/rocks/',
 		'http://luarocks.org/repositories/rocks/',
 	},
-	patchServers = {
-		'https://raw.githubusercontent.com/SquidDev-CC/Blue-Shiny-Rocks/rocks/'
-	},
 	tries = 3,
 	existing = {
 		lua = "5.1",
 		bit32 = "5.2.2-1", -- https://luarocks.org/modules/siffiejoe/bit32
-		computercraft = _HOST:match("ComputerCraft ([%d%.]+)") or "1.74"
+		computercraft = (_HOST and _HOST:match("ComputerCraft ([%d%.]+)")) or _CC_VERSION or "1.0"
 	},
 	libPath = {
 		"./?.lua",
@@ -55,7 +52,6 @@ local function patchServers(servers)
 	end
 end
 
-patchServers(currentSettings.patchServers)
 patchServers(currentSettings.servers)
 
 return currentSettings

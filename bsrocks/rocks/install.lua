@@ -13,6 +13,7 @@ local log, warn = utils.log, utils.warn
 
 local fetched = false
 local installed = {}
+local installedPatches = {}
 
 local function save(rockS, patchS)
 	local blacklist = {}
@@ -36,14 +37,72 @@ local function save(rockS, patchS)
 
 	if patchS then
 		local patchFiles = rockspec.extractFiles(patchS)
-		local downloadPatch = tree(patchFiles.server .. rockS.name, patchFiles)
+		local downloadPatch = tree(patchS.server .. rockS.name, patchFiles)
 
 		files = applyPatches(downloaded, downloadPatch, patchS.patches or {}, patchS.added or {}, patchS.removed or {})
 	end
 
 	rockspec.saveFiles(rockS, downloaded, installDirectory)
+
+	local build = rockS.build
+	if build then
+		if build.modules then
+			local moduleDir = fs.combine(installDirectory, "lib")
+			for module, file in pairs(build.modules) do
+				fileWrapper.write(fs.combine(moduleDir, module:gsub("%.", "/") .. ".lua"), files[file])
+			end
+		end
+
+		-- Extract install locations
+		if build.install then
+			for name, install in pairs(build.install) do
+				local dir = fs.combine(installDirectory, name)
+				for name, file in pairs(install) do
+					fileWrapper.write(fs.combine(dir, name .. ".lua"), files[file])
+				end
+			end
+		end
+	end
+
 	fileWrapper.write(fs.combine(installDirectory, rockS.package .. ".rockspec"), serialize.serialize(rockS))
+
+	if patchS then
+		fileWrapper.write(fs.combine(installDirectory, rockS.package .. ".patchspec"), serialize.serialize(patchS))
+	end
+
 	installed[rockS.package] = rockS
+end
+
+local function remove(rockS, patchS)
+	local blacklist = {}
+	if patchspec and patchspec.remove then
+		for _, v in ipairs(patchspec.remove) do blacklist[v] = true end
+	end
+
+	local files = rockspec.extractFiles(rockS, blacklist)
+
+	local build = rockS.build
+	if build then
+		if build.modules then
+			local moduleDir = fs.combine(installDirectory, "lib")
+			for module, file in pairs(build.modules) do
+				fs.delete(fs.combine(moduleDir, module:gsub("%.", "/") .. ".lua"))
+			end
+		end
+
+		-- Extract install locations
+		if build.install then
+			for name, install in pairs(build.install) do
+				local dir = fs.combine(installDirectory, name)
+				for name, file in pairs(install) do
+					fs.delete(fs.combine(dir, name .. ".lua"))
+				end
+			end
+		end
+	end
+
+	fs.delete(fs.combine(installDirectory, rockS.package .. ".rockspec"))
+	installed[rockS.package] = nil
 end
 
 local function getInstalled()
@@ -59,12 +118,16 @@ local function getInstalled()
 				if file:match("%.rockspec") then
 					local data = serialize.unserialize(fileWrapper.read(fs.combine(installDirectory, file)))
 					installed[data.package:lower()] = data
+				elseif file:match("%.patchspec") then
+					local name = file:gsub("%.patchspec", ""):lower()
+					local data = serialize.unserialize(fileWrapper.read(fs.combine(installDirectory, file)))
+					installedPatches[name] = data
 				end
 			end
 		end
 	end
 
-	return installed
+	return installed, installedPatches
 end
 
 local function install(name, version, constraints)
@@ -77,18 +140,19 @@ local function install(name, version, constraints)
 		error("Already installed", 0)
 	end
 
-	local server, manifest = rockspec.findRock(name)
+	local rockManifest = rockspec.findRockspec(name)
 
-	if not server then
+	if not rockManifest then
 		error("Cannot find '" .. name .. "'", 0)
 	end
 
-	local patchspec = patchspec.findPatchspec(name)
+	local patchManifest = patchspec.findPatchspec(name)
+
 	if not version then
 		if patchspec then
-			version = patchspec.version
+			version = patchManifest.patches[name]
 		else
-			version = rockspec.latestVersion(manifest, name, constraints)
+			version = rockspec.latestVersion(rockManifest, name, constraints)
 		end
 	end
 
@@ -96,7 +160,8 @@ local function install(name, version, constraints)
 		error("Already installed", 0)
 	end
 
-	local rockspec = rockspec.fetchRockspec(server, name, version)
+	local patchspec = patchManifest and patchspec.fetchPatchspec(patchManifest.server, name)
+	local rockspec = rockspec.fetchRockspec(rockManifest.server, name, version)
 
 	if rockspec.build and rockspec.build.type ~= "builtin" then
 		error("Cannot build type '" .. rockspec.build.type .. "'. Please suggest this package to be patched.", 0)
@@ -125,4 +190,5 @@ end
 return {
 	getInstalled = getInstalled,
 	install = install,
+	remove = remove,
 }

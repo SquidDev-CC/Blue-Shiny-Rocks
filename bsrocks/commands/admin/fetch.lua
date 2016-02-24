@@ -15,6 +15,7 @@ local function execute(...)
 		force = true
 		patched = {}
 		for _, name in pairs({...}) do
+			name = name:lower()
 			local file = fs.combine(patchDirectory, "rocks/" .. name .. ".patchspec")
 			if not fs.exists(file) then error("No such patchspec " .. name, 0) end
 
@@ -36,12 +37,12 @@ local function execute(...)
 				error("Patchspec" .. name .. " has no version", 0)
 			end
 
-			local server, manifest = rockspec.findRock(name)
-			if not server then
+			local manifest = rockspec.findRockspec(name)
+			if not manifest then
 				error("Cannot find '" .. name .. "'", 0)
 			end
 
-			local rock = rockspec.fetchRockspec(server, name, patchspec.version)
+			local rock = rockspec.fetchRockspec(manifest.server, name, patchspec.version)
 
 			local files = rockspec.extractFiles(rock)
 			if #files == 0 then error("No files for " .. name .. "-" .. version, 0) end

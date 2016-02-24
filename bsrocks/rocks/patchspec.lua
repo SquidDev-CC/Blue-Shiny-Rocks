@@ -1,32 +1,40 @@
 local diff = require "bsrocks.lib.diffmatchpatch"
 local fileWrapper = require "bsrocks.lib.files"
 local log = require "bsrocks.lib.utils".log
-local settings = require "bsrocks.lib.settings"
+local manifest = require "bsrocks.rocks.manifest"
+local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 local unserialize = require "bsrocks.lib.serialize".unserialize
 
-local patchDirectory, servers = settings.patchDirectory, settings.patchServers
+local patchCache = {}
 
-local cache = {}
 local function findPatchspec(name)
-	local result = cache[name] or false
-	if result then return result end
-
-	log("Fetching patchspec for " .. name)
-	local patchS = name .. ".patchspec"
-
-	for _, server in ipairs(servers) do
-		local handle = http.get(server .. patchS)
-		if handle then
-			local contents = handle.readAll()
-			handle.close()
-
-			result = unserialize(contents)
-			result.server = server
-			break
+	for server, manifest in pairs(manifest.fetchAll()) do
+		if manifest.patches and manifest.patches[name] then
+			return manifest
 		end
 	end
 
-	cache[name] = result or false
+	return
+end
+
+local function fetchPatchspec(server, name)
+	local result = patchCache[name] or false
+	if result then return result end
+
+	log("Fetching patchspec " .. name)
+
+	local handle = http.get(server .. name .. '.patchspec')
+	if not handle then
+		error("Canot fetch " .. name .. " from " .. server, 0)
+	end
+
+	local contents = handle.readAll()
+	handle.close()
+
+	result = unserialize(contents)
+	result.server = server
+	patchCache[name] = result
+
 	return result
 end
 
@@ -153,6 +161,7 @@ end
 
 return {
 	findPatchspec = findPatchspec,
+	fetchPatchspec = fetchPatchspec,
 	makePatches = makePatches,
 	applyPatches = applyPatches,
 	extractFiles = extractFiles,

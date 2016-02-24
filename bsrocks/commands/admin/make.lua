@@ -12,6 +12,7 @@ local function execute(...)
 	else
 		force = true
 		for _, name in pairs({...}) do
+			name = name:lower()
 			local file = fs.combine(patchDirectory, name .. ".patchspec")
 			if not fs.exists(file) then error("No such patchspec " .. name, 0) end
 

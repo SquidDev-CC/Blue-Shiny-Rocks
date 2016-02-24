@@ -1,8 +1,6 @@
 local match = require "bsrocks.lib.diffmatchpatch".match_main
 local rockspec = require "bsrocks.rocks.rockspec"
-local settings = require "bsrocks.lib.settings"
-
-local servers = settings.servers
+local manifest = require "bsrocks.rocks.manifest"
 
 local function execute(search)
 	if not search then error("Expected <name>", 0) end
@@ -10,9 +8,7 @@ local function execute(search)
 
 	local names, namesN = {}, 0
 	local all, allN = {}, 0
-	for _, server in ipairs(servers) do
-		local manifest = rockspec.fetchManifest(server)
-
+	for server, manifest in pairs(manifest.fetchAll()) do
 		for name, _ in pairs(manifest.repository) do
 			-- First try a loose search
 			local version = rockspec.latestVersion(manifest, name)
