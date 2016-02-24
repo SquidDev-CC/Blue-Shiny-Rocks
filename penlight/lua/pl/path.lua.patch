@@ -1,0 +1,13 @@
+@@ -2577,35 +2577,13 @@
+ s = 
+-utils.dir_separator == '%5C%5C'
++false
+ %0A%0Alo
+@@ -8895,187 +8895,8 @@
+ hen%0A
+-        local home = getenv('HOME')%0A        if not home then -- has to be Windows%0A            home = getenv 'USERPROFILE' or (getenv 'HOMEDRIVE' .. getenv 'HOMEPATH')%0A        end%0A
+     
+@@ -8910,14 +8910,8 @@
+ urn 
+-home..
+ sub(
