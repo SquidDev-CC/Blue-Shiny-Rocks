@@ -42,8 +42,6 @@ local function save(rockS, patchS)
 		files = applyPatches(downloaded, downloadPatch, patchS.patches or {}, patchS.added or {}, patchS.removed or {})
 	end
 
-	rockspec.saveFiles(rockS, downloaded, installDirectory)
-
 	local build = rockS.build
 	if build then
 		if build.modules then
@@ -149,7 +147,7 @@ local function install(name, version, constraints)
 	local patchManifest = patchspec.findPatchspec(name)
 
 	if not version then
-		if patchspec then
+		if patchManifest then
 			version = patchManifest.patches[name]
 		else
 			version = rockspec.latestVersion(rockManifest, name, constraints)
