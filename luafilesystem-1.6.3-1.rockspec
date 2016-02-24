@@ -1,10 +1,11 @@
 version = "1.6.3-1"
 dependencies = {
   "lua >= 5.1",
+  "computercraft >= 1.0",
 }
 build = {
   modules = {
-    cliargs = "lfs/lfs.lua",
+    cliargs = "lib/lfs.lua",
   },
   type = "builtin",
 }
@@ -18,7 +19,7 @@ description = {
    ",
 }
 source = {
-  url = "git://github.com/keplerproject/luafilesystem",
-  tag = "v_1_6_3",
+  url = "git://github.com/SquidDev-CC/Blue-Shiny-Rocks",
+  branch = "rocks"
 }
 package = "LuaFileSystem"
