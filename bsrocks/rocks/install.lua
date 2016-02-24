@@ -1,14 +1,15 @@
 local dependencies = require "bsrocks.rocks.dependencies"
 local download = require "bsrocks.downloaders"
 local fileWrapper = require "bsrocks.lib.files"
-local log = require "bsrocks.lib.utils".log
 local patchspec = require "bsrocks.rocks.patchspec"
 local rockspec = require "bsrocks.rocks.rockspec"
 local serialize = require "bsrocks.lib.serialize"
 local settings = require "bsrocks.lib.settings"
 local tree = require "bsrocks.downloaders.tree"
+local utils = require "bsrocks.lib.utils"
 
 local installDirectory = settings.installDirectory
+local log, warn = utils.log, utils.warn
 
 local fetched = false
 local installed = {}
@@ -20,6 +21,13 @@ local function save(rockS, patchS)
 	end
 
 	local files = rockspec.extractFiles(rockS, blacklist)
+
+	for _, file in ipairs(files) do
+		local ext = file:match("[^/]%.(%w+)$")
+		if ext and ext ~= "lua" then
+			warn("File extension is not lua for " .. file .. ". It may not work correctly.")
+		end
+	end
 	local downloaded = download(rockS.source, files)
 
 	if not downloaded then

@@ -55,9 +55,7 @@ else
 	printColoured = function(text) print(text) end
 end
 
-local function log(msg)
-	printColoured(msg, colours.lightGrey)
-
+local function doLog(msg)
 	local handle
 	if fs.exists(logFile) then
 		handle = fs.open(logFile, "a")
@@ -69,6 +67,15 @@ local function log(msg)
 	handle.close()
 end
 
+local function log(msg)
+	doLog("[LOG] " .. msg)
+	printColoured(msg, colours.lightGrey)
+end
+
+local function warn(msg)
+	doLog("[WARN] " .. msg)
+	printColoured(msg, colours.yellow)
+end
 
 local matches = {
 	["^"] = "%^", ["$"] = "%$", ["("] = "%(", [")"] = "%)",
@@ -160,4 +167,5 @@ return {
 	printIndent = printIndent,
 	tmpName = tmpName,
 	traceback = traceback,
+	warn = warn
 }

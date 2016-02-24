@@ -6,6 +6,7 @@ local servers = settings.servers
 
 local function execute(search)
 	if not search then error("Expected <name>", 0) end
+	search = search:lower()
 
 	local names, namesN = {}, 0
 	local all, allN = {}, 0

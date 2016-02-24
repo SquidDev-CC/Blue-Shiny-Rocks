@@ -9,6 +9,8 @@ local servers = settings.servers
 
 local function execute(name)
 	if not name then error("Expected <name>", 0) end
+	name = name:lower()
+
 	local installed = install.getInstalled()
 
 	local isInstalled = true

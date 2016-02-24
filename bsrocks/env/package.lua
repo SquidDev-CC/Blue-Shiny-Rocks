@@ -8,10 +8,14 @@ local checkType = utils.checkType
 return function(env)
 	local _G = env._G
 
+	local path = settings.libPath
+	if type(path) == "table" then path = table.concat(path, ";") end
+
 	local package = {
 		loaded = {},
 		preload = {},
-		path = settings.libPath,
+		path = path,
+		config = "/\n;\n?\n!\n-",
 	}
 	-- Set as a global
 	_G.package = package

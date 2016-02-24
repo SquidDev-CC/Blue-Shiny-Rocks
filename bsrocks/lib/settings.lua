@@ -12,8 +12,16 @@ local currentSettings = {
 	existing = {
 		lua = "5.1",
 		bit32 = "5.2.2-1", -- https://luarocks.org/modules/siffiejoe/bit32
+		computercraft = _HOST:match("ComputerCraft ([%d%.]+)") or "1.74"
 	},
-	libPath = "/rocks/lib/?.lua;/rocks/lib/?;/rocks/lib/?/init.lua",
+	libPath = {
+		"./?.lua",
+		"./?/init.lua",
+		"/rocks-patch/rocks/lib/?.lua",
+		"/rocks-patch/rocks/lib/?/init.lua",
+		"/rocks/lib/?.lua",
+		"/rocks/lib/?/init.lua",
+	},
 	binPath = "/rocks/bin/?.lua;/rocks/bin/?",
 	logFile = "bsrocks.log"
 }

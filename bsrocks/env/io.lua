@@ -36,7 +36,7 @@ local fileMeta = {
 			self.__isClosed = true
 		end,
 		flush = function(self)
-			getHandle(file).flush()
+			getHandle(self).flush()
 		end,
 		read = function(self, ...)
 			local handle = getHandle(self)
@@ -92,7 +92,7 @@ return function(env)
 
 	local function loadFile(path, mode)
 		path = env.resolve(path)
-		mode = (mode or "r"):gsub("+", "", true)
+		mode = (mode or "r"):gsub("%+", "")
 
 		local ok, result = pcall(fs.open, path, mode)
 		if not ok then
@@ -198,9 +198,11 @@ return function(env)
 	end
 
 	local temp = {}
-	function io.tmpfile(file)
+	function io.tmpfile()
 		return loadFile(utils.tmpName())
  	end
+
+	io.open = loadFile
 
  	function io.type(file)
  		if isFile(file) then

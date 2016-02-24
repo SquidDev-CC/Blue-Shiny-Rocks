@@ -42,6 +42,10 @@ return function(options)
 		end
 	end
 
+	-- FIXME:
+	_G.shell = shell
+	_G.multishell = multishell
+
 	function _G.load(func, chunk)
 		local cache = {}
 		while true do

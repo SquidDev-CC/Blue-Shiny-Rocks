@@ -22,6 +22,12 @@ return {
 
 		setfenv(loaded, env()._G)
 
-		return loaded(...)
+		local args = {...}
+		xpcall(
+			function() return loaded(unpack(args)) end,
+			function(msg)
+				printError(env()._G.debug.traceback(msg, 2))
+			end
+		)
 	end,
 }
