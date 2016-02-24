@@ -16,11 +16,14 @@ return {
 	description = description,
 	execute = function(file, ...)
 		if not file then error("Expected file", 0) end
+		file = shell.resolve(file)
 
-		local loaded, msg = loadfile(shell.resolve(file))
+		local loaded, msg = loadfile(file)
 		if not loaded then error(msg, 0) end
 
-		setfenv(loaded, env()._G)
+		local thisEnv = env()._G
+		thisEnv.arg = {[0] = fil, ... }
+		setfenv(loaded, thisEnv)
 
 		local args = {...}
 		xpcall(

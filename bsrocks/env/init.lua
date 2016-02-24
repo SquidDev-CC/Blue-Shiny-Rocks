@@ -1,5 +1,17 @@
+local function addWithMeta(src, dest)
+	for k, v in pairs(src) do
+		if dest[k] == nil then
+			dest[k] = v
+		end
+	end
+
+	local meta = getmetatable(src)
+	if type(meta) == "table" and type(meta.__index) == "table" then
+		return addWithMeta(meta.__index, dest)
+	end
+end
+
 return function(options)
-	local globals = _G
 	options = options or {}
 
 	local nImplemented = function(name)
@@ -36,15 +48,7 @@ return function(options)
 	end
 
 	-- Copy functions across
-	for k,v in pairs(globals) do
-		if not _G[k] then
-			_G[k] = v
-		end
-	end
-
-	-- FIXME:
-	_G.shell = shell
-	_G.multishell = multishell
+	addWithMeta(getfenv(), _G)
 
 	function _G.load(func, chunk)
 		local cache = {}

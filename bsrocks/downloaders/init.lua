@@ -14,6 +14,10 @@ local downloaders = {
 			if not repo then return end
 		end
 
+		if not files then
+			return true
+		end
+
 		print("Downloading " .. repo .. "@" .. branch)
 		return tree('https://raw.github.com/'..repo..'/'..branch..'/', files)
 	end,
@@ -22,10 +26,9 @@ local downloaders = {
 
 return function(source, files)
 	for _, downloader in ipairs(downloaders) do
-		local files = downloader(source, files)
-		if files then
-			print()
-			return files
+		local result = downloader(source, files)
+		if result then
+			return result
 		end
 	end
 

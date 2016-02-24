@@ -2,6 +2,11 @@ local commands = { }
 
 local function addCommand(command)
 	commands[command.name] = command
+	if command.alias then
+		for _, v in ipairs(command.alias) do
+			commands[v] = command
+		end
+	end
 end
 
 local utils = require "bsrocks.lib.utils"
@@ -86,10 +91,17 @@ addCommand({
 				printColoured("    " .. command.help, colours.lightGrey)
 			end
 		end
-	end,
+	end
 })
 
 -- Default to printing help messages
-local foundCommand = getCommand(... or "help")
+local cmd = ...
+if not cmd or cmd == "-h" or cmd == "--help" then
+	cmd = "help"
+elseif select(2, ...) == "-h" or select(2, ...) == "--help" then
+	return getCommand("help").execute(cmd)
+end
+
+local foundCommand = getCommand(cmd)
 local args = {...}
 return foundCommand.execute(select(2, unpack(args)))

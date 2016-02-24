@@ -29,7 +29,7 @@ local function save(rockS, patchS)
 			warn("File extension is not lua for " .. file .. ". It may not work correctly.")
 		end
 	end
-	local downloaded = download(rockS.source, files)
+	local downloaded = download(patchspec.extractSource(rockS, patchS), files)
 
 	if not downloaded then
 		error("Cannot find downloader for " .. rockS.source.url .. ". . Please suggest this package to be patched.", 0)

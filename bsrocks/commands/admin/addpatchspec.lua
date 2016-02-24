@@ -1,4 +1,3 @@
-local download = require "bsrocks.downloaders"
 local fileWrapper = require "bsrocks.lib.files"
 local manifest = require "bsrocks.rocks.manifest"
 local patchDirectory = require "bsrocks.lib.settings".patchDirectory

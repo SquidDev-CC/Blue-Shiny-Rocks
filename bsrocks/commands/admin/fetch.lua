@@ -23,17 +23,17 @@ local function execute(...)
 		end
 	end
 
-	local changed = false
-	for name, patchspec in pairs(patched) do
+	local hasChanged = false
+	for name, patchS in pairs(patched) do
 		local dir = fs.combine(patchDirectory, "rocks-original/" .. name)
 		if force or not fs.isDir(dir) then
-			changed = true
+			hasChanged = true
 			log("Fetching " .. name)
 
 			fs.delete(dir)
 
-			local version = patchspec.version
-			if not patchspec.version then
+			local version = patchS.version
+			if not patchS.version then
 				error("Patchspec" .. name .. " has no version", 0)
 			end
 
@@ -42,12 +42,12 @@ local function execute(...)
 				error("Cannot find '" .. name .. "'", 0)
 			end
 
-			local rock = rockspec.fetchRockspec(manifest.server, name, patchspec.version)
+			local rock = rockspec.fetchRockspec(manifest.server, name, patchS.version)
 
 			local files = rockspec.extractFiles(rock)
 			if #files == 0 then error("No files for " .. name .. "-" .. version, 0) end
 
-			local downloaded = download(rock.source, files)
+			local downloaded = download(patchspec.extractSource(rock, patchS), files)
 
 			if not downloaded then error("Cannot find downloader for " .. rock.source.url, 0) end
 
@@ -59,7 +59,7 @@ local function execute(...)
 		end
 	end
 
-	if not changed then
+	if not hasChanged then
 		error("No packages to fetch", 0)
 	end
 

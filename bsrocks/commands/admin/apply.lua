@@ -20,14 +20,14 @@ local function execute(...)
 		end
 	end
 
-	local changed = false
+	local hasChanged = false
 	for name, data in pairs(patched) do
 		local original = fs.combine(patchDirectory, "rocks-original/" .. name)
 		local patch = fs.combine(patchDirectory, "rocks/" .. name)
 		local changed = fs.combine(patchDirectory, "rocks-changes/" .. name)
 
 		if force or not fs.isDir(changed) then
-			changed = true
+			hasChanged = true
 			log("Applying " .. name)
 
 			fileWrapper.assertExists(original, "original sources for " .. name, 0)
@@ -46,7 +46,7 @@ local function execute(...)
 		end
 	end
 
-	if not changed then
+	if not hasChanged then
 		error("No packages to patch", 0)
 	end
 end

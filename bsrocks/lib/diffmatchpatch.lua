@@ -4,8 +4,8 @@
 * Copyright 2006 Google Inc.
 * http://code.google.com/p/google-diff-match-patch/
 *
-* Based on the JavaScript implementation by Neil Fraser
-* Ported to Lua by Duncan Cross
+* Based on the JavaScript implementation by Neil Fraser.
+* Ported to Lua by Duncan Cross.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -20,7 +20,15 @@
 * limitations under the License.
 --]]
 
-local band, bor, lshift = bit.band, bit.bor, bit.blshift
+--[[
+-- Lua 5.1 and earlier requires the external BitOp library.
+-- This library is built-in from Lua 5.2 and later as 'bit32'.
+require 'bit'	 -- <http://bitop.luajit.org/>
+local band, bor, lshift
+		= bit.band, bit.bor, bit.lshift
+--]]
+
+local band, bor, lshift = bit32.band, bit32.bor, bit32.lshift
 local type, setmetatable, ipairs, select = type, setmetatable, ipairs, select
 local unpack, tonumber, error = unpack, tonumber, error
 local strsub, strbyte, strchar, gmatch, gsub = string.sub, string.byte, string.char, string.gmatch, string.gsub
@@ -28,9 +36,9 @@ local strmatch, strfind, strformat = string.match, string.find, string.format
 local tinsert, tremove, tconcat = table.insert, table.remove, table.concat
 local max, min, floor, ceil, abs = math.max, math.min, math.floor, math.ceil, math.abs
 local clock = os.clock
-local print = print
 
--- Utility functions
+
+-- Utility functions.
 
 local percentEncode_pattern = '[^A-Za-z0-9%-=;\',./~!@#$%&*%(%)_%+ %?]'
 local function percentEncode_replace(v)
@@ -48,46 +56,8 @@ local function tsplice(t, idx, deletions, ...)
 	end
 end
 
-local function tsub(t, i, j)
-	if (i < 0) then
-		local sz = #t
-		i = sz + 1 + i
-		if j and (j < 0) then
-			j = sz + 1 + j
-		end
-	elseif j and (j < 0) then
-		j = #t + 1 + j
-	end
-	return {unpack(t, i, j)}
-end
-
 local function strelement(str, i)
 	return strsub(str, i, i)
-end
-
-local function telement(t, i)
-	if (i < 0) then
-		i = #t + 1 + i
-	end
-	return t[i]
-end
-
-local function tprepend(t, v)
-	tinsert(t, 1, v)
-	return t
-end
-
-local function tappend(t, v)
-	t[#t + 1] = v
-	return t
-end
-
-local function strappend(str, v)
-	return str .. v
-end
-
-local function strprepend(str, v)
-	return v .. str
 end
 
 local function indexOf(a, b, start)
@@ -97,20 +67,9 @@ local function indexOf(a, b, start)
 	return strfind(a, b, start, true)
 end
 
-local function getMaxBits()
-	local maxbits = 0
-	local oldi, newi = 1, 2
-	while (oldi ~= newi) do
-		maxbits = maxbits + 1
-		oldi = newi
-		newi = lshift(newi, 1)
-	end
-	return maxbits
-end
-
 local htmlEncode_pattern = '[&<>\n]'
 local htmlEncode_replace = {
-	['&'] = '&amp;', ['<'] = '&lt;', ['>'] = '&gt;', ['\n'] = '&para;<BR>'
+	['&'] = '&amp;', ['<'] = '&lt;', ['>'] = '&gt;', ['\n'] = '&para;<br>'
 }
 
 -- Public API Functions
@@ -144,30 +103,26 @@ local DIFF_EQUAL = 0
 local Diff_Timeout = 1.0
 -- Cost of an empty edit operation in terms of edit characters.
 local Diff_EditCost = 4
--- The size beyond which the double-ended diff activates.
--- Double-ending is twice as fast, but less accurate.
-local Diff_DualThreshold = 32
 -- At what point is no match declared (0.0 = perfection, 1.0 = very loose).
 local Match_Threshold = 0.5
 -- How far to search for a match (0 = exact location, 1000+ = broad match).
 -- A match this many characters away from the expected location will add
 -- 1.0 to the score (0.0 is a perfect match).
 local Match_Distance = 1000
--- When deleting a large block of text (over ~64 characters), how close does
--- the contents have to match the expected contents. (0.0 = perfection,
+-- When deleting a large block of text (over ~64 characters), how close do
+-- the contents have to be to match the expected contents. (0.0 = perfection,
 -- 1.0 = very loose).	Note that Match_Threshold controls how closely the
 -- end points of a delete need to match.
 local Patch_DeleteThreshold = 0.5
 -- Chunk size for context length.
 local Patch_Margin = 4
--- How many bits in a number?
-local Match_MaxBits = getMaxBits()
+-- The number of bits in an int.
+local Match_MaxBits = 32
 
-local function settings(new)
+function settings(new)
 	if new then
 		Diff_Timeout = new.Diff_Timeout or Diff_Timeout
 		Diff_EditCost = new.Diff_EditCost or Diff_EditCost
-		Diff_DualThreshold = new.Diff_DualThreshold or Diff_DualThreshold
 		Match_Threshold = new.Match_Threshold or Match_Threshold
 		Match_Distance = new.Match_Distance or Match_Distance
 		Patch_DeleteThreshold = new.Patch_DeleteThreshold or Patch_DeleteThreshold
@@ -177,7 +132,6 @@ local function settings(new)
 		return {
 			Diff_Timeout = Diff_Timeout;
 			Diff_EditCost = Diff_EditCost;
-			Diff_DualThreshold = Diff_DualThreshold;
 			Match_Threshold = Match_Threshold;
 			Match_Distance = Match_Distance;
 			Patch_DeleteThreshold = Patch_DeleteThreshold;
@@ -194,9 +148,7 @@ end
 -- The private diff functions
 local
 	_diff_compute,
-	_diff_map,
-	_diff_path1,
-	_diff_path2,
+	_diff_bisect,
 	_diff_halfMatchI,
 	_diff_halfMatch,
 	_diff_cleanupSemanticScore,
@@ -204,57 +156,74 @@ local
 	_diff_cleanupMerge,
 	_diff_commonPrefix,
 	_diff_commonSuffix,
+	_diff_commonOverlap,
 	_diff_xIndex,
 	_diff_text1,
 	_diff_text2,
 	_diff_toDelta,
-	_diff_fromDelta,
-	_diff_toLines,
-	_diff_fromLines
+	_diff_fromDelta
 
 --[[
 * Find the differences between two texts.	Simplifies the problem by stripping
 * any common prefix or suffix off the texts before diffing.
 * @param {string} text1 Old string to be diffed.
 * @param {string} text2 New string to be diffed.
-* @param {boolean} opt_checklines Optional speedup flag.	If present and false,
-*		then don't run a line-level diff first to identify the changed areas.
-*		Defaults to true, which does a faster, slightly less optimal diff
+* @param {boolean} opt_checklines Has no effect in Lua.
+* @param {number} opt_deadline Optional time when the diff should be complete
+*		 by.	Used internally for recursive calls.	Users should set DiffTimeout
+*		 instead.
 * @return {Array.<Array.<number|string>>} Array of diff tuples.
 --]]
-function diff_main(text1, text2, opt_checklines)
-	-- Check for equality (speedup)
-	if (text1 == text2) then
-		return {{DIFF_EQUAL, text1}}
+function diff_main(text1, text2, opt_checklines, opt_deadline)
+	-- Set a deadline by which time the diff must be complete.
+	if opt_deadline == nil then
+		if Diff_Timeout <= 0 then
+			opt_deadline = 2 ^ 31
+		else
+			opt_deadline = clock() + Diff_Timeout
+		end
+	end
+	local deadline = opt_deadline
+
+	-- Check for null inputs.
+	if text1 == nil or text1 == nil then
+		error('Null inputs. (diff_main)')
 	end
 
-	if (opt_checklines == nil) then
-		opt_checklines = true
+	-- Check for equality (speedup).
+	if text1 == text2 then
+		if #text1 > 0 then
+			return {{DIFF_EQUAL, text1}}
+		end
+		return {}
 	end
-	local checklines = opt_checklines
 
-	-- Trim off common prefix (speedup)
+	-- LUANOTE: Due to the lack of Unicode support, Lua is incapable of
+	-- implementing the line-mode speedup.
+	local checklines = false
+
+	-- Trim off common prefix (speedup).
 	local commonlength = _diff_commonPrefix(text1, text2)
 	local commonprefix
-	if (commonlength > 0) then
+	if commonlength > 0 then
 		commonprefix = strsub(text1, 1, commonlength)
 		text1 = strsub(text1, commonlength + 1)
 		text2 = strsub(text2, commonlength + 1)
 	end
 
-	-- Trim off common suffix (speedup)
+	-- Trim off common suffix (speedup).
 	commonlength = _diff_commonSuffix(text1, text2)
 	local commonsuffix
-	if (commonlength > 0) then
+	if commonlength > 0 then
 		commonsuffix = strsub(text1, -commonlength)
 		text1 = strsub(text1, 1, -commonlength - 1)
 		text2 = strsub(text2, 1, -commonlength - 1)
 	end
 
-	-- Compute the diff on the middle block
-	local diffs = _diff_compute(text1, text2, checklines)
+	-- Compute the diff on the middle block.
+	local diffs = _diff_compute(text1, text2, checklines, deadline)
 
-	-- Restore the prefix and suffix
+	-- Restore the prefix and suffix.
 	if commonprefix then
 		tinsert(diffs, 1, {DIFF_EQUAL, commonprefix})
 	end
@@ -274,26 +243,37 @@ function diff_cleanupSemantic(diffs)
 	local changes = false
 	local equalities = {}	-- Stack of indices where equalities are found.
 	local equalitiesLength = 0	-- Keeping our own length var is faster.
-	local lastequality = nil	-- Always equal to equalities[equalitiesLength][2]
+	local lastequality = nil
+	-- Always equal to diffs[equalities[equalitiesLength]][2]
 	local pointer = 1	-- Index of current position.
 	-- Number of characters that changed prior to the equality.
-	local length_changes1 = 0
+	local length_insertions1 = 0
+	local length_deletions1 = 0
 	-- Number of characters that changed after the equality.
-	local length_changes2 = 0
+	local length_insertions2 = 0
+	local length_deletions2 = 0
 
 	while diffs[pointer] do
-		if (diffs[pointer][1] == DIFF_EQUAL) then	-- equality found
+		if diffs[pointer][1] == DIFF_EQUAL then	-- Equality found.
 			equalitiesLength = equalitiesLength + 1
 			equalities[equalitiesLength] = pointer
-			length_changes1 = length_changes2
-			length_changes2 = 0
+			length_insertions1 = length_insertions2
+			length_deletions1 = length_deletions2
+			length_insertions2 = 0
+			length_deletions2 = 0
 			lastequality = diffs[pointer][2]
-		else	-- an insertion or deletion
-			length_changes2 = length_changes2 + #(diffs[pointer][2])
-			if lastequality and (#lastequality > 0)
-				 and (#lastequality <= length_changes1)
-				 and (#lastequality <= length_changes2) then
-				-- Duplicate record
+		else	-- An insertion or deletion.
+			if diffs[pointer][1] == DIFF_INSERT then
+				length_insertions2 = length_insertions2 + #(diffs[pointer][2])
+			else
+				length_deletions2 = length_deletions2 + #(diffs[pointer][2])
+			end
+			-- Eliminate an equality that is smaller or equal to the edits on both
+			-- sides of it.
+			if lastequality
+					and (#lastequality <= max(length_insertions1, length_deletions1))
+					and (#lastequality <= max(length_insertions2, length_deletions2)) then
+				-- Duplicate record.
 				tinsert(diffs, equalities[equalitiesLength],
 				 {DIFF_DELETE, lastequality})
 				-- Change second copy to insert.
@@ -303,17 +283,64 @@ function diff_cleanupSemantic(diffs)
 				-- Throw away the previous equality (it needs to be reevaluated).
 				equalitiesLength = equalitiesLength - 1
 				pointer = (equalitiesLength > 0) and equalities[equalitiesLength] or 0
-				length_changes1, length_changes2 = 0, 0	-- Reset the counters.
+				length_insertions1, length_deletions1 = 0, 0	-- Reset the counters.
+				length_insertions2, length_deletions2 = 0, 0
 				lastequality = nil
 				changes = true
 			end
 		end
 		pointer = pointer + 1
 	end
+
+	-- Normalize the diff.
 	if changes then
 		_diff_cleanupMerge(diffs)
 	end
 	_diff_cleanupSemanticLossless(diffs)
+
+	-- Find any overlaps between deletions and insertions.
+	-- e.g: <del>abcxxx</del><ins>xxxdef</ins>
+	--	 -> <del>abc</del>xxx<ins>def</ins>
+	-- e.g: <del>xxxabc</del><ins>defxxx</ins>
+	--	 -> <ins>def</ins>xxx<del>abc</del>
+	-- Only extract an overlap if it is as big as the edit ahead or behind it.
+	pointer = 2
+	while diffs[pointer] do
+		if (diffs[pointer - 1][1] == DIFF_DELETE and
+				diffs[pointer][1] == DIFF_INSERT) then
+			local deletion = diffs[pointer - 1][2]
+			local insertion = diffs[pointer][2]
+			local overlap_length1 = _diff_commonOverlap(deletion, insertion)
+			local overlap_length2 = _diff_commonOverlap(insertion, deletion)
+			if (overlap_length1 >= overlap_length2) then
+				if (overlap_length1 >= #deletion / 2 or
+						overlap_length1 >= #insertion / 2) then
+					-- Overlap found.	Insert an equality and trim the surrounding edits.
+					tinsert(diffs, pointer,
+							{DIFF_EQUAL, strsub(insertion, 1, overlap_length1)})
+					diffs[pointer - 1][2] =
+							strsub(deletion, 1, #deletion - overlap_length1)
+					diffs[pointer + 1][2] = strsub(insertion, overlap_length1 + 1)
+					pointer = pointer + 1
+				end
+			else
+				if (overlap_length2 >= #deletion / 2 or
+						overlap_length2 >= #insertion / 2) then
+					-- Reverse overlap found.
+					-- Insert an equality and swap and trim the surrounding edits.
+					tinsert(diffs, pointer,
+							{DIFF_EQUAL, strsub(deletion, 1, overlap_length2)})
+					diffs[pointer - 1] = {DIFF_INSERT,
+							strsub(insertion, 1, #insertion - overlap_length2)}
+					diffs[pointer + 1] = {DIFF_DELETE,
+							strsub(deletion, overlap_length2 + 1)}
+					pointer = pointer + 1
+				end
+			end
+			pointer = pointer + 1
+		end
+		pointer = pointer + 1
+	end
 end
 
 --[[
@@ -327,7 +354,7 @@ function diff_cleanupEfficiency(diffs)
 	-- Keeping our own length var is faster.
 	local equalitiesLength = 0
 	-- Always equal to diffs[equalities[equalitiesLength]][2]
-	local lastequality = ''
+	local lastequality = nil
 	-- Index of current position.
 	local pointer = 1
 
@@ -348,7 +375,7 @@ function diff_cleanupEfficiency(diffs)
 	local post_del = 0
 
 	while diffs[pointer] do
-		if (diffs[pointer][1] == DIFF_EQUAL) then	 -- equality found
+		if diffs[pointer][1] == DIFF_EQUAL then	-- Equality found.
 			local diffText = diffs[pointer][2]
 			if (#diffText < Diff_EditCost) and (post_ins == 1 or post_del == 1) then
 				-- Candidate found.
@@ -359,11 +386,11 @@ function diff_cleanupEfficiency(diffs)
 			else
 				-- Not a candidate, and can never become one.
 				equalitiesLength = 0
-				lastequality = ''
+				lastequality = nil
 			end
 			post_ins, post_del = 0, 0
-		else	-- an insertion or deletion
-			if (diffs[pointer][1] == DIFF_DELETE) then
+		else	-- An insertion or deletion.
+			if diffs[pointer][1] == DIFF_DELETE then
 				post_del = 1
 			else
 				post_ins = 1
@@ -376,7 +403,7 @@ function diff_cleanupEfficiency(diffs)
 			* <ins>A</del>X<ins>C</ins><del>D</del>
 			* <ins>A</ins><del>B</del>X<del>C</del>
 			--]]
-			if (#lastequality > 0) and (
+			if lastequality and (
 					(pre_ins+pre_del+post_ins+post_del == 4)
 					or
 					(
@@ -384,20 +411,20 @@ function diff_cleanupEfficiency(diffs)
 						and
 						(pre_ins+pre_del+post_ins+post_del == 3)
 					)) then
-				-- Duplicate record
+				-- Duplicate record.
 				tinsert(diffs, equalities[equalitiesLength],
 						{DIFF_DELETE, lastequality})
 				-- Change second copy to insert.
 				diffs[equalities[equalitiesLength] + 1][1] = DIFF_INSERT
-				-- Throw away the equality we just deleted;
+				-- Throw away the equality we just deleted.
 				equalitiesLength = equalitiesLength - 1
-				lastequality = ''
+				lastequality = nil
 				if (pre_ins == 1) and (pre_del == 1) then
 					-- No changes made which could affect previous entry, keep going.
 					post_ins, post_del = 1, 1
 					equalitiesLength = 0
 				else
-					-- Throw away the previous equality;
+					-- Throw away the previous equality.
 					equalitiesLength = equalitiesLength - 1
 					pointer = (equalitiesLength > 0) and equalities[equalitiesLength] or 0
 					post_ins, post_del = 0, 0
@@ -428,7 +455,7 @@ function diff_levenshtein(diffs)
 			insertions = insertions + #data
 		elseif (op == DIFF_DELETE) then
 			deletions = deletions + #data
-		else--if (op == DIFF_EQUAL) then
+		elseif (op == DIFF_EQUAL) then
 			-- A deletion and an insertion is one substitution.
 			levenshtein = levenshtein + max(insertions, deletions)
 			insertions = 0
@@ -446,22 +473,16 @@ end
 --]]
 function diff_prettyHtml(diffs)
 	local html = {}
-	local i = 0
 	for x, diff in ipairs(diffs) do
 		local op = diff[1]	 -- Operation (insert, delete, equal)
 		local data = diff[2]	-- Text of change.
 		local text = gsub(data, htmlEncode_pattern, htmlEncode_replace)
-		if (op == DIFF_INSERT) then
-			html[x] = '<INS STYLE="background:#E6FFE6;" TITLE="i=' .. i .. '">'
-					.. text .. '</INS>'
-		elseif (op == DIFF_DELETE) then
-			html[x] = '<DEL STYLE="background:#FFE6E6;" TITLE="i=' .. i .. '">'
-					.. text .. '</DEL>'
-		else--if (op == DIFF_EQUAL) then
-			html[x] = '<SPAN TITLE="i=' .. i .. '">' .. text .. '</SPAN>'
-		end
-		if (op ~= DIFF_DELETE) then
-			i = i + #data
+		if op == DIFF_INSERT then
+			html[x] = '<ins style="background:#e6ffe6;">' .. text .. '</ins>'
+		elseif op == DIFF_DELETE then
+			html[x] = '<del style="background:#ffe6e6;">' .. text .. '</del>'
+		elseif op == DIFF_EQUAL then
+			html[x] = '<span>' .. text .. '</span>'
 		end
 	end
 	return tconcat(html)
@@ -476,20 +497,19 @@ end
 * have any common prefix or suffix.
 * @param {string} text1 Old string to be diffed.
 * @param {string} text2 New string to be diffed.
-* @param {boolean} checklines Speedup flag.	If false, then don't run a
-*		line-level diff first to identify the changed areas.
-*		If true, then run a faster, slightly less optimal diff
+* @param {boolean} checklines Has no effect in Lua.
+* @param {number} deadline Time when the diff should be complete by.
 * @return {Array.<Array.<number|string>>} Array of diff tuples.
 * @private
 --]]
-function _diff_compute(text1, text2, checklines)
-	if (#text1 == 0) then
-		-- Just add some text (speedup)
+function _diff_compute(text1, text2, checklines, deadline)
+	if #text1 == 0 then
+		-- Just add some text (speedup).
 		return {{DIFF_INSERT, text2}}
 	end
 
-	if (#text2 == 0) then
-		-- Just delete some text (speedup)
+	if #text2 == 0 then
+		-- Just delete some text (speedup).
 		return {{DIFF_DELETE, text1}}
 	end
 
@@ -499,20 +519,25 @@ function _diff_compute(text1, text2, checklines)
 	local shorttext = (#text1 > #text2) and text2 or text1
 	local i = indexOf(longtext, shorttext)
 
-	if (i ~= nil) then
-		-- Shorter text is inside the longer text (speedup)
+	if i ~= nil then
+		-- Shorter text is inside the longer text (speedup).
 		diffs = {
 			{DIFF_INSERT, strsub(longtext, 1, i - 1)},
 			{DIFF_EQUAL, shorttext},
 			{DIFF_INSERT, strsub(longtext, i + #shorttext)}
 		}
 		-- Swap insertions for deletions if diff is reversed.
-		if (#text1 > #text2) then
+		if #text1 > #text2 then
 			diffs[1][1], diffs[3][1] = DIFF_DELETE, DIFF_DELETE
 		end
 		return diffs
 	end
-	longtext, shorttext = nil, nil	-- Garbage collect.
+
+	if #shorttext == 1 then
+		-- Single character string.
+		-- After the previous speedup, the character can't be an equality.
+		return {{DIFF_DELETE, text1}, {DIFF_INSERT, text2}}
+	end
 
 	-- Check to see if the problem can be split in two.
 	do
@@ -524,8 +549,8 @@ function _diff_compute(text1, text2, checklines)
 		if text1_a then
 			-- A half-match was found, sort out the return data.
 			-- Send both pairs off for separate processing.
-			local diffs_a = diff_main(text1_a, text2_a, checklines)
-			local diffs_b = diff_main(text1_b, text2_b, checklines)
+			local diffs_a = diff_main(text1_a, text2_a, checklines, deadline)
+			local diffs_b = diff_main(text1_b, text2_b, checklines, deadline)
 			-- Merge the results.
 			local diffs_a_len = #diffs_a
 			diffs = diffs_a
@@ -536,429 +561,162 @@ function _diff_compute(text1, text2, checklines)
 			return diffs
 		end
 	end
-	-- Perform a real diff.
-	if checklines and (#text1 < 100 or #text2 < 100) then
-		-- Too trivial for the overhead.
-		checklines = false
+
+	return _diff_bisect(text1, text2, deadline)
+end
+
+--[[
+* Find the 'middle snake' of a diff, split the problem in two
+* and return the recursively constructed diff.
+* See Myers 1986 paper: An O(ND) Difference Algorithm and Its Variations.
+* @param {string} text1 Old string to be diffed.
+* @param {string} text2 New string to be diffed.
+* @param {number} deadline Time at which to bail if not yet complete.
+* @return {Array.<Array.<number|string>>} Array of diff tuples.
+* @private
+--]]
+function _diff_bisect(text1, text2, deadline)
+	-- Cache the text lengths to prevent multiple calls.
+	local text1_length = #text1
+	local text2_length = #text2
+	local _sub, _element
+	local max_d = ceil((text1_length + text2_length) / 2)
+	local v_offset = max_d
+	local v_length = 2 * max_d
+	local v1 = {}
+	local v2 = {}
+	-- Setting all elements to -1 is faster in Lua than mixing integers and nil.
+	for x = 0, v_length - 1 do
+		v1[x] = -1
+		v2[x] = -1
 	end
-	local linearray
-	if checklines then
-		-- Scan the text on a line-by-line basis first.
-		text1, text2, linearray = _diff_toLines(text1, text2)
-	end
-	diffs = _diff_map(text1, text2)
-	if (diffs == nil) then
-		-- No acceptable result.
-		diffs = {{DIFF_DELETE, text1}, {DIFF_INSERT, text2}}
-	end
-	if checklines then
-		-- Convert the diff back to original text.
-		_diff_fromLines(diffs, linearray)
-		-- Eliminate freak matches (e.g. blank lines)
-		diff_cleanupSemantic(diffs)
-		-- Rediff any replacement blocks, this time character-by-character.
-		-- Add a dummy entry at the end.
-		diffs[#diffs + 1] = {DIFF_EQUAL, ''}
-		local pointer = 1
-		local count_delete = 0
-		local count_insert = 0
-		local text_delete = ''
-		local text_insert = ''
-		while (pointer <= #diffs) do
-			local diff_type = diffs[pointer][1]
-			if (diff_type == DIFF_INSERT) then
-				count_insert = count_insert + 1
-				text_insert = text_insert .. diffs[pointer][2]
-			elseif (diff_type == DIFF_DELETE) then
-				count_delete = count_delete + 1
-				text_delete = text_delete .. diffs[pointer][2]
-			else--if (diff_type == DIFF_EQUAL) then
-				-- Upon reaching an equality, check for prior redundancies.
-				if (count_delete >= 1) and (count_insert >= 1) then
-					-- Delete the offending records and add the merged ones.
-					local a = diff_main(text_delete, text_insert, false)
-					pointer = pointer - count_delete - count_insert
-					for i = 1, count_delete + count_insert do
-						tremove(diffs, pointer)
-					end
-					for j = #a, 1, -1 do
-						tinsert(diffs, pointer, a[j])
-					end
-					pointer = pointer + #a
-				end
-				count_insert = 0
-				count_delete = 0
-				text_delete = ''
-				text_insert = ''
-			end
-			pointer = pointer + 1
+	v1[v_offset + 1] = 0
+	v2[v_offset + 1] = 0
+	local delta = text1_length - text2_length
+	-- If the total number of characters is odd, then
+	-- the front path will collide with the reverse path.
+	local front = (delta % 2 ~= 0)
+	-- Offsets for start and end of k loop.
+	-- Prevents mapping of space beyond the grid.
+	local k1start = 0
+	local k1end = 0
+	local k2start = 0
+	local k2end = 0
+	for d = 0, max_d - 1 do
+		-- Bail out if deadline is reached.
+		if clock() > deadline then
+			break
 		end
-		diffs[#diffs] = nil	-- Remove the dummy entry at the end.
+
+		-- Walk the front path one step.
+		for k1 = -d + k1start, d - k1end, 2 do
+			local k1_offset = v_offset + k1
+			local x1
+			if (k1 == -d) or ((k1 ~= d) and
+					(v1[k1_offset - 1] < v1[k1_offset + 1])) then
+				x1 = v1[k1_offset + 1]
+			else
+				x1 = v1[k1_offset - 1] + 1
+			end
+			local y1 = x1 - k1
+			while (x1 <= text1_length) and (y1 <= text2_length)
+					and (strelement(text1, x1) == strelement(text2, y1)) do
+				x1 = x1 + 1
+				y1 = y1 + 1
+			end
+			v1[k1_offset] = x1
+			if x1 > text1_length + 1 then
+				-- Ran off the right of the graph.
+				k1end = k1end + 2
+			elseif y1 > text2_length + 1 then
+				-- Ran off the bottom of the graph.
+				k1start = k1start + 2
+			elseif front then
+				local k2_offset = v_offset + delta - k1
+				if k2_offset >= 0 and k2_offset < v_length and v2[k2_offset] ~= -1 then
+					-- Mirror x2 onto top-left coordinate system.
+					local x2 = text1_length - v2[k2_offset] + 1
+					if x1 > x2 then
+						-- Overlap detected.
+						return _diff_bisectSplit(text1, text2, x1, y1, deadline)
+					end
+				end
+			end
+		end
+
+		-- Walk the reverse path one step.
+		for k2 = -d + k2start, d - k2end, 2 do
+			local k2_offset = v_offset + k2
+			local x2
+			if (k2 == -d) or ((k2 ~= d) and
+					(v2[k2_offset - 1] < v2[k2_offset + 1])) then
+				x2 = v2[k2_offset + 1]
+			else
+				x2 = v2[k2_offset - 1] + 1
+			end
+			local y2 = x2 - k2
+			while (x2 <= text1_length) and (y2 <= text2_length)
+					and (strelement(text1, -x2) == strelement(text2, -y2)) do
+				x2 = x2 + 1
+				y2 = y2 + 1
+			end
+			v2[k2_offset] = x2
+			if x2 > text1_length + 1 then
+				-- Ran off the left of the graph.
+				k2end = k2end + 2
+			elseif y2 > text2_length + 1 then
+				-- Ran off the top of the graph.
+				k2start = k2start + 2
+			elseif not front then
+				local k1_offset = v_offset + delta - k2
+				if k1_offset >= 0 and k1_offset < v_length and v1[k1_offset] ~= -1 then
+					local x1 = v1[k1_offset]
+					local y1 = v_offset + x1 - k1_offset
+					-- Mirror x2 onto top-left coordinate system.
+					x2 = text1_length - x2 + 1
+					if x1 > x2 then
+						-- Overlap detected.
+						return _diff_bisectSplit(text1, text2, x1, y1, deadline)
+					end
+				end
+			end
+		end
+	end
+	-- Diff took too long and hit the deadline or
+	-- number of diffs equals number of characters, no commonality at all.
+	return {{DIFF_DELETE, text1}, {DIFF_INSERT, text2}}
+end
+
+--[[
+ * Given the location of the 'middle snake', split the diff in two parts
+ * and recurse.
+ * @param {string} text1 Old string to be diffed.
+ * @param {string} text2 New string to be diffed.
+ * @param {number} x Index of split point in text1.
+ * @param {number} y Index of split point in text2.
+ * @param {number} deadline Time at which to bail if not yet complete.
+ * @return {Array.<Array.<number|string>>} Array of diff tuples.
+ * @private
+--]]
+function _diff_bisectSplit(text1, text2, x, y, deadline)
+	local text1a = strsub(text1, 1, x - 1)
+	local text2a = strsub(text2, 1, y - 1)
+	local text1b = strsub(text1, x)
+	local text2b = strsub(text2, y)
+
+	-- Compute both diffs serially.
+	local diffs = diff_main(text1a, text2a, false, deadline)
+	local diffsb = diff_main(text1b, text2b, false, deadline)
+
+	local diffs_len = #diffs
+	for i, v in ipairs(diffsb) do
+		diffs[diffs_len + i] = v
 	end
 	return diffs
 end
 
 --[[
-* Split two texts into an array of strings.	Reduce the texts to a string of
-* hashes where each Unicode character represents one line.
-* @param {string} text1 First string.
-* @param {string} text2 Second string.
-* @return {Array.<string|Array.<string>>} Three element Array, containing the
-*		 encoded text1, the encoded text2 and the array of unique strings.	The
-*		 zeroth element of the array of unique strings is intentionally blank.
-* @private
---]]
-function _diff_toLines(text1, text2)
-	local lineArray = {}	-- e.g. lineArray[4] == 'Hello\n'
-	local lineHash = {}	 -- e.g. lineHash['Hello\n'] == 4
-
-	--[[
-	* Split a text into an array of strings.	Reduce the texts to a string of
-	* hashes where each Unicode character represents one line.
-	* Modifies linearray and linehash through being a closure.
-	* @param {string} text String to encode.
-	* @return {string} Encoded string.
-	* @private
-	--]]
-	local _diff_toLinesMunge = function(text)
-		local lines = {}
-		-- Walk the text, pulling out a substring for each line.
-		-- text.split('\n') would would temporarily double our memory footprint.
-		-- Modifying text would create many large strings to garbage collect.
-		local lineStart = 1
-		local lineEnd = 0
-		-- Keeping our own length variable is faster than looking it up.
-		local lineArrayLength = #lineArray
-		while (lineEnd < #text) do
-			lineEnd = indexOf(text, '\n', lineStart) or #text
-			local line = strsub(text, lineStart, lineEnd)
-			lineStart = lineEnd + 1
-
-			local hash = lineHash[line]
-			if hash then
-				lines[#lines + 1] = hash
-			else
-				lineArrayLength = lineArrayLength + 1
-				lines[#lines + 1] = lineArrayLength
-				lineHash[line] = lineArrayLength
-				lineArray[lineArrayLength] = line
-			end
-		end
-		return lines
-	end
-
-	local lines1 = _diff_toLinesMunge(text1)
-	local lines2 = _diff_toLinesMunge(text2)
-	return lines1, lines2, lineArray
-end
-
---[[
-* Rehydrate the text in a diff from a string of line hashes to real lines of
-* text.
-* @param {Array.<Array.<number|string>>} diffs Array of diff tuples.
-* @param {Array.<string>} lineArray Array of unique strings.
-* @private
---]]
-function _diff_fromLines(diffs, lineArray)
-	for x, diff in ipairs(diffs) do
-		local lines = diff[2]
-		local text = {}
-		for idx, line in ipairs(lines) do
-			text[idx] = lineArray[line]
-		end
-		diff[2] = tconcat(text)
-	end
-end
-
---[[
-* Explore the intersection points between the two texts.
-* @param {string} text1 Old string to be diffed.
-* @param {string} text2 New string to be diffed.
-* @return {Array.<Array.<number|string>>?} Array of diff tuples or nil if no
-*		diff available.
-* @private
---]]
-function _diff_map(text1, text2)
-	-- Don't run for too long.
-	local s_end = clock() + Diff_Timeout
-	-- Cache the text lengths to prevent multiple calls.
-	local text1_length = #text1
-	local text2_length = #text2
-	local _sub, _element
-	-- LUANOTE: Due to the lack of Unicode in Lua, tables are used
-	-- for the linemode speedup.
-	if type(text1) == 'table' then
-		_sub, _element = tsub, telement
-	else
-		_sub, _element = strsub, strelement
-	end
-	local max_d = text1_length + text2_length - 1
-	local doubleEnd = (Diff_DualThreshold * 2 < max_d)
-	local v_map1 = {}
-	local v_map2 = {}
-	local v1 = {}
-	local v2 = {}
-	v1[1] = 1
-	v2[1] = 1
-	local x, y
-	local footstep	-- Used to track overlapping paths.
-	local footsteps = {}
-	local done = false
-	-- If the total number of characters is odd, then
-	-- the front path will collide with the reverse path.
-	local front = (((text1_length + text2_length) % 2) == 1)
-	for d = 0, max_d - 1 do
-		-- Bail out if timeout reached.
-		if (Diff_Timeout > 0) and (clock() > s_end) then
-			return nil
-		end
-
-		-- Walk the front path one step.
-		v_map1[d + 1] = {}
-		for k = -d, d, 2 do
-			if (k == -d) or ((k ~= d) and (v1[k - 1] < v1[k + 1])) then
-				x = v1[k + 1]
-			else
-				x = v1[k - 1] + 1
-			end
-			y = x - k
-			if doubleEnd then
-				footstep = x .. ',' .. y
-				if front and footsteps[footstep] then
-					done = true
-				end
-				if not front then
-					footsteps[footstep] = d
-				end
-			end
-
-			while (not done) and (x <= text1_length) and (y <= text2_length)
-					and (_element(text1, x) == _element(text2, y)) do
-				x = x + 1
-				y = y + 1
-				if doubleEnd then
-					footstep = x .. ',' .. y
-					if front and footsteps[footstep] then
-						done = true
-					end
-					if not front then
-						footsteps[footstep] = d
-					end
-				end
-			end
-
-			v1[k] = x
-			v_map1[d + 1][x .. ',' .. y] = true
-			if (x == text1_length + 1) and (y == text2_length + 1) then
-				-- Reached the end in single-path mode.
-				return _diff_path1(v_map1, text1, text2)
-			elseif done then
-				-- Front path ran over reverse path.
-				for i = footsteps[footstep] + 2, #v_map2 do
-					v_map2[i] = nil
-				end
-				local a = _diff_path1(v_map1,
-						_sub(text1, 1, x - 1),
-						_sub(text2, 1, y - 1)
-				)
-				local a_len = #a
-				local a2 = _diff_path2(v_map2,
-						_sub(text1, x),
-						_sub(text2, y)
-				)
-				for i, v in ipairs(a2) do
-					a[a_len + i] = v
-				end
-				return a
-			end
-		end
-
-		if doubleEnd then
-			-- Walk the reverse path one step.
-			v_map2[d + 1] = {}
-			for k = -d, d, 2 do
-				if (k == -d) or ((k ~= d) and (v2[k - 1] < v2[k + 1])) then
-					x = v2[k + 1]
-				else
-					x = v2[k - 1] + 1
-				end
-				y = x - k
-				footstep = (text1_length + 2 - x) .. ',' .. (text2_length + 2 - y)
-				if (not front) and footsteps[footstep] then
-					done = true
-				end
-				if front then
-					footsteps[footstep] = d
-				end
-
-				while (not done) and (x <= text1_length) and (y <= text2_length)
-					 and (_element(text1, -x) == _element(text2, -y)) do
-					x, y = x + 1, y + 1
-					footstep = (text1_length + 2 - x) .. ',' .. (text2_length + 2 - y)
-					if (not front) and footsteps[footstep] then
-						done = true
-					end
-					if front then
-						footsteps[footstep] = d
-					end
-				end
-
-				v2[k] = x
-				v_map2[d + 1][x .. ',' .. y] = true
-				if done then
-					-- Reverse path ran over front path.
-					for i = footsteps[footstep] + 2, #v_map1 do
-						v_map1[i] = nil
-					end
-					local a = _diff_path1(v_map1, _sub(text1, 1, -x), _sub(text2, 1, -y))
-					-- LUANOTE: #text1-x+2 instead of -x+1 because if x is -1,
-					-- you get the whole string instead of the empty string.
-					local appending = _diff_path2(v_map2,
-							_sub(text1, #text1 - x + 2), _sub(text2, #text2 - y + 2))
-					local a_len = #a
-					for i, v in ipairs(appending) do
-						a[a_len + i] = v
-					end
-					return a
-				end
-			end
-		end
-	end
-	-- Number of diffs equals number of characters, no commonality at all.
-	return nil
-end
-
-
---[[
-* Work from the middle back to the start to determine the path.
-* @param {Array.<Object>} v_map Array of paths.
-* @param {string} text1 Old string fragment to be diffed.
-* @param {string} text2 New string fragment to be diffed.
-* @return {Array.<Array.<number|string>>} Array of diff tuples.
-* @private
---]]
-function _diff_path1(v_map, text1, text2)
-	local path = {}
-	local _prepend, _element, _sub
-	-- LUANOTE: Due to the lack of Unicode in Lua, tables are used
-	-- for the linemode speedup.
-	if type(text1) == 'table' then
-		_prepend, _element, _sub = tprepend, telement, tsub
-	else
-		_prepend, _element, _sub = strprepend, strelement, strsub
-	end
-	local x = #text1 + 1
-	local y = #text2 + 1
-	--[[ @type {number?} ]]
-	local last_op = nil
-	for d = #v_map - 1, 1, -1 do
-		while true do
-			if v_map[d][(x - 1) .. ',' .. y] then
-				x = x - 1
-				if (last_op == DIFF_DELETE) then
-					path[1][2] = _prepend(path[1][2], _element(text1, x))
-				else
-					tinsert(path, 1, {DIFF_DELETE, _sub(text1, x, x)})
-				end
-				last_op = DIFF_DELETE
-				break
-			elseif v_map[d][x .. ',' .. (y - 1)] then
-				y = y - 1
-				if (last_op == DIFF_INSERT) then
-					path[1][2] = _prepend(path[1][2], _element(text2, y))
-				else
-					tinsert(path, 1, {DIFF_INSERT, _sub(text2, y, y)})
-				end
-				last_op = DIFF_INSERT
-				break
-			else
-				x = x - 1
-				y = y - 1
-				if (_element(text1, x) ~= _element(text2, y)) then
-					 error('No diagonal.	Can\'t happen. (_diff_path1)')
-				end
-				if (last_op == DIFF_EQUAL) then
-					path[1][2] = _prepend(path[1][2], _element(text1, x))
-				else
-					tinsert(path, 1, {DIFF_EQUAL, _sub(text1, x, x)})
-				end
-				last_op = DIFF_EQUAL
-			end
-		end
-	end
-	return path
-end
-
-
---[[
-* Work from the middle back to the end to determine the path.
-* @param {Array.<Object>} v_map Array of paths.
-* @param {string} text1 Old string fragment to be diffed.
-* @param {string} text2 New string fragment to be diffed.
-* @return {Array.<Array.<number|string>>} Array of diff tuples.
-* @private
---]]
-function _diff_path2(v_map, text1, text2)
-	local path = {}
-	local pathLength = 0
-	local _append, _element, _sub
-	-- LUANOTE: Due to the lack of Unicode in Lua, tables are used
-	-- for the linemode speedup.
-	if type(text1) == 'table' then
-		_append, _element, _sub = tappend, telement, tsub
-	else
-		_append, _element, _sub = strappend, strelement, strsub
-	end
-	local x = #text1 + 1
-	local y = #text2 + 1
-	--[[ @type {number?} ]]
-	local last_op = nil
-	for d = #v_map - 1, 1, -1 do
-		while true do
-			if v_map[d][(x - 1) .. ',' .. y] then
-				x = x - 1
-				if (last_op == DIFF_DELETE) then
-					path[pathLength][2]
-							= _append(path[pathLength][2], _element(text1, -x))
-				else
-					pathLength = pathLength + 1
-					path[pathLength] = {DIFF_DELETE, _sub(text1, -x, -x)}
-				end
-				last_op = DIFF_DELETE
-				break
-			elseif v_map[d][x .. ',' .. (y - 1)] then
-				y = y - 1
-				if (last_op == DIFF_INSERT) then
-					path[pathLength][2]
-							= _append(path[pathLength][2], _element(text2, -y))
-				else
-					pathLength = pathLength + 1
-					path[pathLength] = {DIFF_INSERT, _sub(text2, -y, -y)}
-				end
-				last_op = DIFF_INSERT
-				break
-			else
-				x = x - 1
-				y = y - 1
-				if (strsub(text1, -x, -x) ~= strsub(text2, -y, -y)) then
-					error('No diagonal.	Can\'t happen. (_diff_path2)')
-				end
-				if (last_op == DIFF_EQUAL) then
-					path[pathLength][2]
-							= _append(path[pathLength][2], _element(text1, -x))
-				else
-					pathLength = pathLength + 1
-					path[pathLength] = {DIFF_EQUAL, _sub(text1, -x, -x)}
-				end
-				last_op = DIFF_EQUAL
-			end
-		end
-	end
-	return path
-end
-
---[[
-* Determine the common prefix of two strings
+* Determine the common prefix of two strings.
 * @param {string} text1 First string.
 * @param {string} text2 Second string.
 * @return {number} The number of characters common to the start of each
@@ -989,9 +747,8 @@ function _diff_commonPrefix(text1, text2)
 	return pointermid
 end
 
-
 --[[
-* Determine the common suffix of two strings
+* Determine the common suffix of two strings.
 * @param {string} text1 First string.
 * @param {string} text2 Second string.
 * @return {number} The number of characters common to the end of each string.
@@ -1022,13 +779,62 @@ function _diff_commonSuffix(text1, text2)
 end
 
 --[[
+* Determine if the suffix of one string is the prefix of another.
+* @param {string} text1 First string.
+* @param {string} text2 Second string.
+* @return {number} The number of characters common to the end of the first
+*		 string and the start of the second string.
+* @private
+--]]
+function _diff_commonOverlap(text1, text2)
+	-- Cache the text lengths to prevent multiple calls.
+	local text1_length = #text1
+	local text2_length = #text2
+	-- Eliminate the null case.
+	if text1_length == 0 or text2_length == 0 then
+		return 0
+	end
+	-- Truncate the longer string.
+	if text1_length > text2_length then
+		text1 = strsub(text1, text1_length - text2_length + 1)
+	elseif text1_length < text2_length then
+		text2 = strsub(text2, 1, text1_length)
+	end
+	local text_length = min(text1_length, text2_length)
+	-- Quick check for the worst case.
+	if text1 == text2 then
+		return text_length
+	end
+
+	-- Start by looking for a single character match
+	-- and increase length until no match is found.
+	-- Performance analysis: http://neil.fraser.name/news/2010/11/04/
+	local best = 0
+	local length = 1
+	while true do
+		local pattern = strsub(text1, text_length - length + 1)
+		local found = strfind(text2, pattern, 1, true)
+		if found == nil then
+			return best
+		end
+		length = length + found - 1
+		if found == 1 or strsub(text1, text_length - length + 1) ==
+										 strsub(text2, 1, length) then
+			best = length
+			length = length + 1
+		end
+	end
+end
+
+--[[
 * Does a substring of shorttext exist within longtext such that the substring
 * is at least half the length of longtext?
+* This speedup can produce non-minimal diffs.
 * Closure, but does not reference any external variables.
 * @param {string} longtext Longer string.
 * @param {string} shorttext Shorter string.
-* @param {number} i Start index of quarter length substring within longtext
-* @return {Array.<string>?} Five element Array, containing the prefix of
+* @param {number} i Start index of quarter length substring within longtext.
+* @return {?Array.<string>} Five element Array, containing the prefix of
 *		longtext, the suffix of longtext, the prefix of shorttext, the suffix
 *		of shorttext and the common middle.	Or nil if there was no match.
 * @private
@@ -1048,7 +854,7 @@ function _diff_halfMatchI(longtext, shorttext, i)
 				strsub(shorttext, j))
 		local suffixLength = _diff_commonSuffix(strsub(longtext, 1, i - 1),
 				strsub(shorttext, 1, j - 1))
-		if (#best_common < suffixLength+prefixLength) then
+		if #best_common < suffixLength + prefixLength then
 			best_common = strsub(shorttext, j - suffixLength, j - 1)
 					.. strsub(shorttext, j, j + prefixLength - 1)
 			best_longtext_a = strsub(longtext, 1, i - suffixLength - 1)
@@ -1057,9 +863,9 @@ function _diff_halfMatchI(longtext, shorttext, i)
 			best_shorttext_b = strsub(shorttext, j + prefixLength)
 		end
 	end
-	if (#best_common >= #longtext / 2) then
+	if #best_common * 2 >= #longtext then
 		return {best_longtext_a, best_longtext_b,
-				best_shorttext_a, best_shorttext_b, best_common}
+						best_shorttext_a, best_shorttext_b, best_common}
 	else
 		return nil
 	end
@@ -1070,15 +876,19 @@ end
 * longer text?
 * @param {string} text1 First string.
 * @param {string} text2 Second string.
-* @return {Array.<string>?} Five element Array, containing the prefix of
+* @return {?Array.<string>} Five element Array, containing the prefix of
 *		text1, the suffix of text1, the prefix of text2, the suffix of
 *		text2 and the common middle.	Or nil if there was no match.
 * @private
 --]]
 function _diff_halfMatch(text1, text2)
+	if Diff_Timeout <= 0 then
+		-- Don't risk returning a non-optimal diff if we have unlimited time.
+		return nil
+	end
 	local longtext = (#text1 > #text2) and text1 or text2
 	local shorttext = (#text1 > #text2) and text2 or text1
-	if (#longtext < 10) or (#shorttext < 1) then
+	if (#longtext < 4) or (#shorttext * 2 < #longtext) then
 		return nil	-- Pointless.
 	end
 
@@ -1111,26 +921,19 @@ function _diff_halfMatch(text1, text2)
 	return text1_a, text1_b, text2_a, text2_b, mid_common
 end
 
--- Define some string matching patterns for matching boundaries.
-local punctuation = '^[^a-zA-Z0-9]'
-local whitespace = '^%s'
-local linebreak = '^[\r\n]'
-local blanklineEnd = '\n\r?\n$'
-local blanklineStart = '^\r?\n\r?\n'
-
 --[[
 * Given two strings, compute a score representing whether the internal
 * boundary falls on logical boundaries.
-* Scores range from 5 (best) to 0 (worst).
-* Closure, makes reference to regex patterns defined above.
+* Scores range from 6 (best) to 0 (worst).
 * @param {string} one First string.
 * @param {string} two Second string.
 * @return {number} The score.
+* @private
 --]]
 function _diff_cleanupSemanticScore(one, two)
 	if (#one == 0) or (#two == 0) then
 		-- Edges are the best.
-		return 5
+		return 6
 	end
 
 	-- Each port of this function behaves slightly differently due to
@@ -1138,25 +941,34 @@ function _diff_cleanupSemanticScore(one, two)
 	-- 'whitespace'.	Since this function's purpose is largely cosmetic,
 	-- the choice has been made to use each language's native features
 	-- rather than force total conformity.
-	local score = 0
-	-- One point for non-alphanumeric.
-	if strmatch(one, punctuation, -1) or strmatch(two, punctuation) then
-		score = score + 1
+	local char1 = strsub(one, -1)
+	local char2 = strsub(two, 1, 1)
+	local nonAlphaNumeric1 = strmatch(char1, '%W')
+	local nonAlphaNumeric2 = strmatch(char2, '%W')
+	local whitespace1 = nonAlphaNumeric1 and strmatch(char1, '%s')
+	local whitespace2 = nonAlphaNumeric2 and strmatch(char2, '%s')
+	local lineBreak1 = whitespace1 and strmatch(char1, '%c')
+	local lineBreak2 = whitespace2 and strmatch(char2, '%c')
+	local blankLine1 = lineBreak1 and strmatch(one, '\n\r?\n$')
+	local blankLine2 = lineBreak2 and strmatch(two, '^\r?\n\r?\n')
+
+	if blankLine1 or blankLine2 then
+		-- Five points for blank lines.
+		return 5
+	elseif lineBreak1 or lineBreak2 then
+		-- Four points for line breaks.
+		return 4
+	elseif nonAlphaNumeric1 and not whitespace1 and whitespace2 then
+		-- Three points for end of sentences.
+		return 3
+	elseif whitespace1 or whitespace2 then
 		-- Two points for whitespace.
-		if strmatch(one, whitespace, -1) or strmatch(two, whitespace) then
-			score = score + 1
-			-- Three points for line breaks.
-			if strmatch(one, linebreak, -1) or strmatch(two, linebreak) then
-				score = score + 1
-				-- Four points for blank lines.
-				if strmatch(strsub(one, -3), blanklineEnd)
-						or strmatch(two, blanklineStart) then
-					score = score + 1
-				end
-			end
-		end
+		return 2
+	elseif nonAlphaNumeric1 or nonAlphaNumeric2 then
+		-- One point for non-alphanumeric.
+		return 1
 	end
-	return score
+	return 0
 end
 
 --[[
@@ -1180,7 +992,7 @@ function _diff_cleanupSemanticLossless(diffs)
 
 			-- First, shift the edit as far left as possible.
 			local commonOffset = _diff_commonSuffix(equality1, edit)
-			if (commonOffset > 0) then
+			if commonOffset > 0 then
 				local commonString = strsub(edit, -commonOffset)
 				equality1 = strsub(equality1, 1, -commonOffset - 1)
 				edit = commonString .. strsub(edit, 1, -commonOffset - 1)
@@ -1194,30 +1006,30 @@ function _diff_cleanupSemanticLossless(diffs)
 			local bestScore = _diff_cleanupSemanticScore(equality1, edit)
 					+ _diff_cleanupSemanticScore(edit, equality2)
 
-			while (strbyte(edit, 1) == strbyte(equality2, 1)) do
+			while strbyte(edit, 1) == strbyte(equality2, 1) do
 				equality1 = equality1 .. strsub(edit, 1, 1)
 				edit = strsub(edit, 2) .. strsub(equality2, 1, 1)
 				equality2 = strsub(equality2, 2)
 				local score = _diff_cleanupSemanticScore(equality1, edit)
 						+ _diff_cleanupSemanticScore(edit, equality2)
 				-- The >= encourages trailing rather than leading whitespace on edits.
-				if (score >= bestScore) then
+				if score >= bestScore then
 					bestScore = score
 					bestEquality1 = equality1
 					bestEdit = edit
 					bestEquality2 = equality2
 				end
 			end
-			if (prevDiff[2] ~= bestEquality1) then
+			if prevDiff[2] ~= bestEquality1 then
 				-- We have an improvement, save it back to the diff.
-				if (#bestEquality1 > 0) then
+				if #bestEquality1 > 0 then
 					diffs[pointer - 1][2] = bestEquality1
 				else
 					tremove(diffs, pointer - 1)
 					pointer = pointer - 1
 				end
 				diffs[pointer][2] = bestEdit
-				if (#bestEquality2 > 0) then
+				if #bestEquality2 > 0 then
 					diffs[pointer + 1][2] = bestEquality2
 				else
 					tremove(diffs, pointer + 1, 1)
@@ -1242,21 +1054,21 @@ function _diff_cleanupMerge(diffs)
 	local commonlength
 	while diffs[pointer] do
 		local diff_type = diffs[pointer][1]
-		if (diff_type == DIFF_INSERT) then
+		if diff_type == DIFF_INSERT then
 			count_insert = count_insert + 1
 			text_insert = text_insert .. diffs[pointer][2]
 			pointer = pointer + 1
-		elseif (diff_type == DIFF_DELETE) then
+		elseif diff_type == DIFF_DELETE then
 			count_delete = count_delete + 1
 			text_delete = text_delete .. diffs[pointer][2]
 			pointer = pointer + 1
-		elseif (diff_type == DIFF_EQUAL) then
+		elseif diff_type == DIFF_EQUAL then
 			-- Upon reaching an equality, check for prior redundancies.
-			if (count_delete > 0) or (count_insert > 0) then
+			if count_delete + count_insert > 1 then
 				if (count_delete > 0) and (count_insert > 0) then
 					-- Factor out any common prefixies.
 					commonlength = _diff_commonPrefix(text_insert, text_delete)
-					if (commonlength > 0) then
+					if commonlength > 0 then
 						local back_pointer = pointer - count_delete - count_insert
 						if (back_pointer > 1) and (diffs[back_pointer - 1][1] == DIFF_EQUAL)
 								then
@@ -1272,7 +1084,7 @@ function _diff_cleanupMerge(diffs)
 					end
 					-- Factor out any common suffixies.
 					commonlength = _diff_commonSuffix(text_insert, text_delete)
-					if (commonlength ~= 0) then
+					if commonlength ~= 0 then
 						diffs[pointer][2] =
 						strsub(text_insert, -commonlength) .. diffs[pointer][2]
 						text_insert = strsub(text_insert, 1, -commonlength - 1)
@@ -1280,10 +1092,10 @@ function _diff_cleanupMerge(diffs)
 					end
 				end
 				-- Delete the offending records and add the merged ones.
-				if (count_delete == 0) then
+				if count_delete == 0 then
 					tsplice(diffs, pointer - count_insert,
 					count_insert, {DIFF_INSERT, text_insert})
-				elseif (count_insert == 0) then
+				elseif count_insert == 0 then
 					tsplice(diffs, pointer - count_delete,
 					count_delete, {DIFF_DELETE, text_delete})
 				else
@@ -1304,7 +1116,7 @@ function _diff_cleanupMerge(diffs)
 			text_delete, text_insert = '', ''
 		end
 	end
-	if (diffs[#diffs][2] == '') then
+	if diffs[#diffs][2] == '' then
 		diffs[#diffs] = nil	-- Remove the dummy entry at the end.
 	end
 
@@ -1314,7 +1126,7 @@ function _diff_cleanupMerge(diffs)
 	local changes = false
 	pointer = 2
 	-- Intentionally ignore the first and last element (don't need checking).
-	while (pointer < #diffs) do
+	while pointer < #diffs do
 		local prevDiff, nextDiff = diffs[pointer - 1], diffs[pointer + 1]
 		if (prevDiff[1] == DIFF_EQUAL) and (nextDiff[1] == DIFF_EQUAL) then
 			-- This is a single edit surrounded by equalities.
@@ -1322,13 +1134,13 @@ function _diff_cleanupMerge(diffs)
 			local currentText = diff[2]
 			local prevText = prevDiff[2]
 			local nextText = nextDiff[2]
-			if (strsub(currentText, -#prevText) == prevText) then
+			if strsub(currentText, -#prevText) == prevText then
 				-- Shift the edit over the previous equality.
 				diff[2] = prevText .. strsub(currentText, 1, -#prevText - 1)
 				nextDiff[2] = prevText .. nextDiff[2]
 				tremove(diffs, pointer - 1)
 				changes = true
-			elseif (strsub(currentText, 1, #nextText) == nextText) then
+			elseif strsub(currentText, 1, #nextText) == nextText then
 				-- Shift the edit over the next equality.
 				prevDiff[2] = prevText .. nextText
 				diff[2] = strsub(currentText, #nextText + 1) .. nextText
@@ -1362,13 +1174,13 @@ function _diff_xIndex(diffs, loc)
 	local x
 	for _x, diff in ipairs(diffs) do
 		x = _x
-		if (diff[1] ~= DIFF_INSERT) then	 -- Equality or deletion.
+		if diff[1] ~= DIFF_INSERT then	 -- Equality or deletion.
 			chars1 = chars1 + #diff[2]
 		end
-		if (diff[1] ~= DIFF_DELETE) then	 -- Equality or insertion.
+		if diff[1] ~= DIFF_DELETE then	 -- Equality or insertion.
 			chars2 = chars2 + #diff[2]
 		end
-		if (chars1 > loc) then	 -- Overshot the location.
+		if chars1 > loc then	 -- Overshot the location.
 			break
 		end
 		last_chars1 = chars1
@@ -1390,7 +1202,7 @@ end
 function _diff_text1(diffs)
 	local text = {}
 	for x, diff in ipairs(diffs) do
-		if (diff[1] ~= DIFF_INSERT) then
+		if diff[1] ~= DIFF_INSERT then
 			text[#text + 1] = diff[2]
 		end
 	end
@@ -1405,7 +1217,7 @@ end
 function _diff_text2(diffs)
 	local text = {}
 	for x, diff in ipairs(diffs) do
-		if (diff[1] ~= DIFF_DELETE) then
+		if diff[1] ~= DIFF_DELETE then
 			text[#text + 1] = diff[2]
 		end
 	end
@@ -1424,17 +1236,16 @@ function _diff_toDelta(diffs)
 	local text = {}
 	for x, diff in ipairs(diffs) do
 		local op, data = diff[1], diff[2]
-		if (op == DIFF_INSERT) then
+		if op == DIFF_INSERT then
 			text[x] = '+' .. gsub(data, percentEncode_pattern, percentEncode_replace)
-		elseif (op == DIFF_DELETE) then
+		elseif op == DIFF_DELETE then
 			text[x] = '-' .. #data
-		else--if (op == DIFF_EQUAL) then
+		elseif op == DIFF_EQUAL then
 			text[x] = '=' .. #data
 		end
 	end
 	return tconcat(text, '\t')
 end
-
 
 --[[
 * Given the original text1, and an encoded string which describes the
@@ -1505,18 +1316,23 @@ local _match_bitap, _match_alphabet
 * @param {string} text The text to search.
 * @param {string} pattern The pattern to search for.
 * @param {number} loc The location to search around.
-* @return {number?} Best match index or -1.
+* @return {number} Best match index or -1.
 --]]
 function match_main(text, pattern, loc)
-	if (text == pattern) then
+	-- Check for null inputs.
+	if text == nil or pattern == nil or loc == nil then
+		error('Null inputs. (match_main)')
+	end
+
+	if text == pattern then
 		-- Shortcut (potentially not guaranteed by the algorithm)
 		return 1
-	elseif (#text == 0) then
+	elseif #text == 0 then
 		-- Nothing to match.
 		return -1
 	end
-	loc = max(1, min(loc or 1, #text))
-	if (strsub(text, loc, loc + #pattern - 1) == pattern) then
+	loc = max(1, min(loc, #text))
+	if strsub(text, loc, loc + #pattern - 1) == pattern then
 		-- Perfect match at the perfect spot!	(Includes case of null pattern)
 		return loc
 	else
@@ -1535,7 +1351,7 @@ end
 * @return {Object} Hash of character locations.
 * @private
 --]]
-function _match_alphabet (pattern)
+function _match_alphabet(pattern)
 	local s = {}
 	local i = 0
 	for c in gmatch(pattern, '.') do
@@ -1551,11 +1367,11 @@ end
 * @param {string} text The text to search.
 * @param {string} pattern The pattern to search for.
 * @param {number} loc The location to search around.
-* @return {number?} Best match index or -1.
+* @return {number} Best match index or -1.
 * @private
 --]]
 function _match_bitap(text, pattern, loc)
-	if (#pattern > Match_MaxBits) then
+	if #pattern > Match_MaxBits then
 		error('Pattern too long.')
 	end
 
@@ -1770,7 +1586,7 @@ function patch_make(a, opt_b, opt_c)
 			patch.diffs[patchDiffLength] = diff
 			postpatch_text = strsub(postpatch_text, 1, char_count2)
 					.. strsub(postpatch_text, char_count2 + #diff_text + 1)
-		else--if (diff_type == DIFF_EQUAL) then
+		elseif (diff_type == DIFF_EQUAL) then
 			if (#diff_text <= Patch_Margin * 2)
 					and (patchDiffLength ~= 0) and (#diffs ~= x) then
 				-- Small equality inside a patch.
@@ -1822,8 +1638,8 @@ end
 *		 new text and an array of boolean values.
 --]]
 function patch_apply(patches, text)
-	if (patches[1] == nil) then
-		return {text, {}}
+	if patches[1] == nil then
+		return text, {}
 	end
 
 	-- Deep copy the patches so that no changes are made to originals.
@@ -1844,15 +1660,15 @@ function patch_apply(patches, text)
 		local text1 = _diff_text1(patch.diffs)
 		local start_loc
 		local end_loc = -1
-		if (#text1 > Match_MaxBits) then
+		if #text1 > Match_MaxBits then
 			-- _patch_splitMax will only provide an oversized pattern in
 			-- the case of a monster delete.
 			start_loc = match_main(text,
 					strsub(text1, 1, Match_MaxBits), expected_loc)
-			if (start_loc ~= -1) then
+			if start_loc ~= -1 then
 				end_loc = match_main(text, strsub(text1, -Match_MaxBits),
 						expected_loc + #text1 - Match_MaxBits)
-				if (end_loc == -1) or (start_loc >= end_loc) then
+				if end_loc == -1 or start_loc >= end_loc then
 					-- Can't find valid trailing context.	Drop this patch.
 					start_loc = -1
 				end
@@ -1860,7 +1676,7 @@ function patch_apply(patches, text)
 		else
 			start_loc = match_main(text, text1, expected_loc)
 		end
-		if (start_loc == -1) then
+		if start_loc == -1 then
 			-- No match found.	:(
 			results[x] = false
 			-- Subtract the delta for this failed patch from subsequent patches.
@@ -1870,12 +1686,12 @@ function patch_apply(patches, text)
 			results[x] = true
 			delta = start_loc - expected_loc
 			local text2
-			if (end_loc == -1) then
+			if end_loc == -1 then
 				text2 = strsub(text, start_loc, start_loc + #text1 - 1)
 			else
 				text2 = strsub(text, start_loc, end_loc + Match_MaxBits - 1)
 			end
-			if (text1 == text2) then
+			if text1 == text2 then
 				-- Perfect match, just shove the replacement text in.
 				text = strsub(text, 1, start_loc - 1) .. _diff_text2(patch.diffs)
 						.. strsub(text, start_loc + #text1)
@@ -1892,17 +1708,17 @@ function patch_apply(patches, text)
 					local index1 = 1
 					local index2
 					for y, mod in ipairs(patch.diffs) do
-						if (mod[1] ~= DIFF_EQUAL) then
+						if mod[1] ~= DIFF_EQUAL then
 							index2 = _diff_xIndex(diffs, index1)
 						end
-						if (mod[1] == DIFF_INSERT) then
+						if mod[1] == DIFF_INSERT then
 							text = strsub(text, 1, start_loc + index2 - 2)
 									.. mod[2] .. strsub(text, start_loc + index2 - 1)
-						elseif (mod[1] == DIFF_DELETE) then
+						elseif mod[1] == DIFF_DELETE then
 							text = strsub(text, 1, start_loc + index2 - 2) .. strsub(text,
 									start_loc + _diff_xIndex(diffs, index1 + #mod[2] - 1))
 						end
-						if (mod[1] ~= DIFF_DELETE) then
+						if mod[1] ~= DIFF_DELETE then
 							index1 = index1 + #mod[2]
 						end
 					end
@@ -1940,7 +1756,7 @@ function patch_fromText(textline)
 		return patches
 	end
 	local text = {}
-	for line in gmatch(textline .. "\n", '([^\n]*)\n') do
+	for line in gmatch(textline, '([^\n]*)') do
 		text[#text + 1] = line
 	end
 	local textPointer = 1
@@ -2039,10 +1855,10 @@ function _new_patch_obj()
 	return setmetatable({
 		--[[ @type {Array.<Array.<number|string>>} ]]
 		diffs = {};
-		--[[ @type {number?} ]]
-		start1 = 1; -- nil;
-		--[[ @type {number?} ]]
-		start2 = 1; -- nil;
+		--[[ @type {?number} ]]
+		start1 = 1;	-- nil;
+		--[[ @type {?number} ]]
+		start2 = 1;	-- nil;
 		--[[ @type {number} ]]
 		length1 = 0;
 		--[[ @type {number} ]]
@@ -2194,21 +2010,22 @@ end
 --[[
 * Look through the patches and break up any which are longer than the maximum
 * limit of the match algorithm.
+* Intended to be called only from within patch_apply.
 * @param {Array.<_new_patch_obj>} patches Array of patch objects.
 --]]
 function _patch_splitMax(patches)
+	local patch_size = Match_MaxBits
 	local x = 1
 	while true do
 		local patch = patches[x]
-		if (patch == nil) then
+		if patch == nil then
 			return
 		end
-		if (patch.length1 > Match_MaxBits) then
+		if patch.length1 > patch_size then
 			local bigpatch = patch
 			-- Remove the big old patch.
 			tremove(patches, x)
 			x = x - 1
-			local patch_size = Match_MaxBits
 			local start1 = bigpatch.start1
 			local start2 = bigpatch.start2
 			local precontext = ''
@@ -2218,7 +2035,7 @@ function _patch_splitMax(patches)
 				local empty = true
 				patch.start1 = start1 - #precontext
 				patch.start2 = start2 - #precontext
-				if (precontext ~= '') then
+				if precontext ~= '' then
 					patch.length1, patch.length2 = #precontext, #precontext
 					patch.diffs[#patch.diffs + 1] = {DIFF_EQUAL, precontext}
 				end
@@ -2268,7 +2085,7 @@ function _patch_splitMax(patches)
 				precontext = strsub(precontext, -Patch_Margin)
 				-- Append the end context for this patch.
 				local postcontext = strsub(_diff_text1(bigpatch.diffs), 1, Patch_Margin)
-				if (postcontext ~= '') then
+				if postcontext ~= '' then
 					patch.length1 = patch.length1 + #postcontext
 					patch.length2 = patch.length2 + #postcontext
 					if patch.diffs[1]
@@ -2300,13 +2117,13 @@ function _patch_appendText(patch, text)
 	local start1, start2 = patch.start1, patch.start2
 	local diffs = patch.diffs
 
-	if (length1 == 1) then
+	if length1 == 1 then
 		coords1 = start1
 	else
 		coords1 = ((length1 == 0) and (start1 - 1) or start1) .. ',' .. length1
 	end
 
-	if (length2 == 1) then
+	if length2 == 1 then
 		coords2 = start2
 	else
 		coords2 = ((length2 == 0) and (start2 - 1) or start2) .. ',' .. length2
@@ -2317,11 +2134,11 @@ function _patch_appendText(patch, text)
 	-- Escape the body of the patch with %xx notation.
 	for x, diff in ipairs(patch.diffs) do
 		local diff_type = diff[1]
-		if (diff_type == DIFF_INSERT) then
+		if diff_type == DIFF_INSERT then
 			op = '+'
-		elseif (diff_type == DIFF_DELETE) then
+		elseif diff_type == DIFF_DELETE then
 			op = '-'
-		else--if (diff_type == DIFF_EQUAL) then
+		elseif diff_type == DIFF_EQUAL then
 			op = ' '
 		end
 		text[#text + 1] = op
@@ -2335,46 +2152,46 @@ end
 settings {
 	Match_Threshold = 0.3,
 }
+
 -- Expose the API
-return {
-	DIFF_DELETE = DIFF_DELETE,
-	DIFF_INSERT = DIFF_INSERT,
-	DIFF_EQUAL = DIFF_EQUAL,
+local _M = {}
 
-	diff_main = diff_main,
-	diff_cleanupSemantic = diff_cleanupSemantic,
-	diff_cleanupEfficiency = diff_cleanupEfficiency,
-	diff_levenshtein = diff_levenshtein,
-	diff_prettyHtml = diff_prettyHtml,
-	settings = settings,
+_M.DIFF_DELETE = DIFF_DELETE
+_M.DIFF_INSERT = DIFF_INSERT
+_M.DIFF_EQUAL = DIFF_EQUAL
 
-	match_main = match_main,
+_M.diff_main = diff_main
+_M.diff_cleanupSemantic = diff_cleanupSemantic
+_M.diff_cleanupEfficiency = diff_cleanupEfficiency
+_M.diff_levenshtein = diff_levenshtein
+_M.diff_prettyHtml = diff_prettyHtml
 
-	patch_make = patch_make,
-	patch_toText = patch_toText,
-	patch_fromText = patch_fromText,
-	patch_apply = patch_apply,
+_M.match_main = match_main
 
-	-- Expose some non-API functions as well, for testing purposes etc.
-	diff_commonPrefix = _diff_commonPrefix,
-	diff_commonSuffix = _diff_commonSuffix,
-	diff_halfMatch = _diff_halfMatch,
-	diff_cleanupMerge = _diff_cleanupMerge,
-	diff_cleanupSemanticLossless = _diff_cleanupSemanticLossless,
-	diff_text1 = _diff_text1,
-	diff_text2 = _diff_text2,
-	diff_toDelta = _diff_toDelta,
-	diff_fromDelta = _diff_fromDelta,
-	diff_xIndex = _diff_xIndex,
-	diff_path1 = _diff_path1,
-	diff_path2 = _diff_path2,
-	match_alphabet = _match_alphabet,
-	match_bitap = _match_bitap,
-	new_patch_obj = _new_patch_obj,
-	patch_addContext = _patch_addContext,
-	patch_splitMax = _patch_splitMax,
-	diff_toLines = _diff_toLines,
-	diff_fromLines = _diff_fromLines,
-	diff_map = _diff_map,
-	patch_addPadding = _patch_addPadding,
-}
+_M.patch_make = patch_make
+_M.patch_toText = patch_toText
+_M.patch_fromText = patch_fromText
+_M.patch_apply = patch_apply
+
+-- Expose some non-API functions as well, for testing purposes etc.
+_M.diff_commonPrefix = _diff_commonPrefix
+_M.diff_commonSuffix = _diff_commonSuffix
+_M.diff_commonOverlap = _diff_commonOverlap
+_M.diff_halfMatch = _diff_halfMatch
+_M.diff_bisect = _diff_bisect
+_M.diff_cleanupMerge = _diff_cleanupMerge
+_M.diff_cleanupSemanticLossless = _diff_cleanupSemanticLossless
+_M.diff_text1 = _diff_text1
+_M.diff_text2 = _diff_text2
+_M.diff_toDelta = _diff_toDelta
+_M.diff_fromDelta = _diff_fromDelta
+_M.diff_xIndex = _diff_xIndex
+_M.match_alphabet = _match_alphabet
+_M.match_bitap = _match_bitap
+_M.new_patch_obj = _new_patch_obj
+_M.patch_addContext = _patch_addContext
+_M.patch_splitMax = _patch_splitMax
+_M.patch_addPadding = _patch_addPadding
+_M.settings = settings
+
+return _M

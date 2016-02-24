@@ -75,6 +75,21 @@ local function extractFiles(patch)
 	return files
 end
 
+local function extractSource(rockS, patchS)
+	local source = patchS.source
+	local version = rockS.version
+	if source then
+		local out = {}
+		for k, v in pairs(source) do
+			if type(v) == "string" then v = v:gsub("%%{version}", version) end
+			out[k] = v
+		end
+		return out
+	end
+
+	return rockS.source
+end
+
 local function makePatches(original, changed)
 	local patches, remove = {}, {}
 	local files = {}
@@ -163,6 +178,7 @@ return {
 	findPatchspec = findPatchspec,
 	fetchPatchspec = fetchPatchspec,
 	makePatches = makePatches,
+	extractSource = extractSource,
 	applyPatches = applyPatches,
 	extractFiles = extractFiles,
 	getAll = getAll,

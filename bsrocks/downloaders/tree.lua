@@ -56,8 +56,9 @@ local function tree(prefix, files)
 	end
 
 	parallel.waitForAll(unpack(callbacks))
+	print()
 	if errored then
-		error("Cannot download " .. repo .. "@" .. branch)
+		error("Cannot download " .. prefix)
 	end
 
 	return result

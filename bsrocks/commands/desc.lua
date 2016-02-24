@@ -1,4 +1,5 @@
 local dependencies = require "bsrocks.rocks.dependencies"
+local download = require "bsrocks.downloaders"
 local install = require "bsrocks.rocks.install"
 local match = require "bsrocks.lib.diffmatchpatch".match_main
 local printColoured = require "bsrocks.lib.utils".printColoured
@@ -53,6 +54,11 @@ local function execute(name)
 		if desc.homepage then
 			printColoured("URL: " .. desc.homepage, colours.lightBlue)
 		end
+	end
+
+	if not download(spec.source, nil) then
+		printColoured("Incompatible: No downloader", colours.red)
+		printColoured("for " .. spec.source.url, colours.lightGrey)
 	end
 
 	if spec.dependencies and #spec.dependencies > 0 then

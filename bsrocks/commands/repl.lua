@@ -2,7 +2,7 @@ local env = require "bsrocks.env"
 local serialize = require "bsrocks.lib.dump"
 local parse = require "bsrocks.lib.parse"
 
-local function execute()
+local function execute(...)
 	local running = true
 	local thisEnv = env()._G
 
@@ -13,6 +13,7 @@ local function execute()
 
 	-- We need to pass through a secondary function to prevent tail calls
 	thisEnv._noTail = function(...) return ... end
+	thisEnv.arg = { [0] = "repl", ... }
 
 	-- As per @demhydraz's suggestion. Because the prompt uses Out[n] as well
 	local output = {}

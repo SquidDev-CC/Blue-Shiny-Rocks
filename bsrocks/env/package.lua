@@ -16,6 +16,7 @@ return function(env)
 		preload = {},
 		path = path,
 		config = "/\n;\n?\n!\n-",
+		cpath = "",
 	}
 	-- Set as a global
 	_G.package = package
