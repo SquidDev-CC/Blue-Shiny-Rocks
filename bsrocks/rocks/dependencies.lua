@@ -164,7 +164,7 @@ end
 -- @param input string: A list of constraints in string format.
 -- @return table or nil: A table representing the same constraints,
 -- or nil if the input string is invalid.
-function parseConstraints(input)
+local function parseConstraints(input)
 	assert(type(input) == "string")
 
 	local constraints, constraint, oinput = {}, nil, input
@@ -234,7 +234,7 @@ end
 -- @param constraints table: An array of constraints in table format.
 -- @return boolean: True if version satisfies all constraints,
 -- false otherwise.
-function matchConstraints(version, constraints)
+local function matchConstraints(version, constraints)
 	assert(type(version) == "table")
 	assert(type(constraints) == "table")
 

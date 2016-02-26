@@ -29,6 +29,7 @@ return function(options)
 		_VERSION = _VERSION
 	}
 	_G._G = _G
+	_G._ENV = _ENV
 
 	local env = {
 		_G = _G,

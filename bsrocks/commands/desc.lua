@@ -1,7 +1,6 @@
 local dependencies = require "bsrocks.rocks.dependencies"
 local download = require "bsrocks.downloaders"
 local install = require "bsrocks.rocks.install"
-local match = require "bsrocks.lib.diffmatchpatch".match_main
 local patchspec = require "bsrocks.rocks.patchspec"
 local printColoured = require "bsrocks.lib.utils".printColoured
 local rockspec = require "bsrocks.rocks.rockspec"

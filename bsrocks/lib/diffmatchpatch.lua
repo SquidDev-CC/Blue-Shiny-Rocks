@@ -119,7 +119,7 @@ local Patch_Margin = 4
 -- The number of bits in an int.
 local Match_MaxBits = 32
 
-function settings(new)
+local function settings(new)
 	if new then
 		Diff_Timeout = new.Diff_Timeout or Diff_Timeout
 		Diff_EditCost = new.Diff_EditCost or Diff_EditCost
@@ -149,6 +149,7 @@ end
 local
 	_diff_compute,
 	_diff_bisect,
+	_diff_bisectSplit,
 	_diff_halfMatchI,
 	_diff_halfMatch,
 	_diff_cleanupSemanticScore,
@@ -1320,7 +1321,7 @@ local _match_bitap, _match_alphabet
 --]]
 function match_main(text, pattern, loc)
 	-- Check for null inputs.
-	if text == nil or pattern == nil or loc == nil then
+	if text == nil or pattern == nil then
 		error('Null inputs. (match_main)')
 	end
 
@@ -1331,7 +1332,7 @@ function match_main(text, pattern, loc)
 		-- Nothing to match.
 		return -1
 	end
-	loc = max(1, min(loc, #text))
+	loc = max(1, min(loc or 0, #text))
 	if strsub(text, loc, loc + #pattern - 1) == pattern then
 		-- Perfect match at the perfect spot!	(Includes case of null pattern)
 		return loc
@@ -1756,7 +1757,7 @@ function patch_fromText(textline)
 		return patches
 	end
 	local text = {}
-	for line in gmatch(textline, '([^\n]*)') do
+	for line in gmatch(textline .. "\n", '([^\n]*)\n') do
 		text[#text + 1] = line
 	end
 	local textPointer = 1

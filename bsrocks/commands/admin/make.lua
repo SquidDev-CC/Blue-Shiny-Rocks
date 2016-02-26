@@ -11,9 +11,10 @@ local function execute(...)
 		patched = patchspec.getAll()
 	else
 		force = true
+		patched = {}
 		for _, name in pairs({...}) do
 			name = name:lower()
-			local file = fs.combine(patchDirectory, name .. ".patchspec")
+			local file = fs.combine(patchDirectory, "rocks/" .. name .. ".patchspec")
 			if not fs.exists(file) then error("No such patchspec " .. name, 0) end
 
 			patched[name] = serialize.unserialize(fileWrapper.read(file))
