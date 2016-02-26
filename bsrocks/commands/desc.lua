@@ -2,6 +2,7 @@ local dependencies = require "bsrocks.rocks.dependencies"
 local download = require "bsrocks.downloaders"
 local install = require "bsrocks.rocks.install"
 local match = require "bsrocks.lib.diffmatchpatch".match_main
+local patchspec = require "bsrocks.rocks.patchspec"
 local printColoured = require "bsrocks.lib.utils".printColoured
 local rockspec = require "bsrocks.rocks.rockspec"
 local settings = require "bsrocks.lib.settings"
@@ -12,10 +13,10 @@ local function execute(name)
 	if not name then error("Expected <name>", 0) end
 	name = name:lower()
 
-	local installed = install.getInstalled()
+	local installed, installedPatches = install.getInstalled()
 
 	local isInstalled = true
-	local spec = installed[name]
+	local spec, patchS = installed[name], installedPatches[name]
 
 	if not spec then
 		isInstalled = false
@@ -25,6 +26,10 @@ local function execute(name)
 
 		local version = rockspec.latestVersion(manifest, name)
 		spec = rockspec.fetchRockspec(manifest.server, name, version)
+
+
+		local patchManifest = patchspec.findPatchspec(name)
+		patchS = patchManifest and patchspec.fetchPatchspec(patchManifest.server, name)
 	end
 
 	write(name .. ": " .. spec.version .. " ")
@@ -56,9 +61,21 @@ local function execute(name)
 		end
 	end
 
-	if not download(spec.source, nil) then
-		printColoured("Incompatible: No downloader", colours.red)
-		printColoured("for " .. spec.source.url, colours.lightGrey)
+	if not isInstalled then
+		local error, issues = install.findIssues(spec, patchS)
+		if #issues > 0 then
+			printColoured("Issues", colours.orange)
+			if error then
+				printColoured("This package is incompatible", colors.red)
+			end
+
+			for _, v in ipairs(issues) do
+				local color = colors.yellow
+				if v[2] then color = colors.red end
+
+				printColoured(" " .. v[1], color)
+			end
+		end
 	end
 
 	if spec.dependencies and #spec.dependencies > 0 then

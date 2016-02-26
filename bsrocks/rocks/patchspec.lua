@@ -76,9 +76,9 @@ local function extractFiles(patch)
 end
 
 local function extractSource(rockS, patchS)
-	local source = patchS.source
-	local version = rockS.version
+	local source = patchS and patchS.source
 	if source then
+		local version = rockS.version
 		local out = {}
 		for k, v in pairs(source) do
 			if type(v) == "string" then v = v:gsub("%%{version}", version) end

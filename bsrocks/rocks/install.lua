@@ -15,24 +15,67 @@ local fetched = false
 local installed = {}
 local installedPatches = {}
 
-local function save(rockS, patchS)
+local function extractFiles(rockS, patchS)
 	local blacklist = {}
-	if patchspec and patchspec.remove then
-		for _, v in ipairs(patchspec.remove) do blacklist[v] = true end
+	if patchS and patchS.remove then
+		for _, v in ipairs(patchS.remove) do blacklist[v] = true end
 	end
 
-	local files = rockspec.extractFiles(rockS, blacklist)
+	return rockspec.extractFiles(rockS, blacklist)
+end
+
+local function findIssues(rockS, patchS, files)
+	files = files or extractFiles(rockS, patchS)
+
+	local issues = {}
+	local error = false
+
+	local source = patchspec.extractSource(rockS, patchS)
+	if not download(source, false) then
+		issues[#issues + 1] = { "Cannot find downloader for " .. source.url .. ". Please suggest this package to be patched.", true }
+		error = true
+	end
 
 	for _, file in ipairs(files) do
 		local ext = file:match("[^/]%.(%w+)$")
 		if ext and ext ~= "lua" then
-			warn("File extension is not lua for " .. file .. ". It may not work correctly.")
+			if ext == "c" or ext == "cpp" or ext == "h" or ext == "hpp" then
+				issues[#issues + 1] = { file .. " is a C file. This will not work.", true }
+				error = true
+			else
+				issues[#issues + 1] = { "File extension is not lua (for " .. file .. "). It may not work correctly.", false }
+			end
 		end
 	end
-	local downloaded = download(patchspec.extractSource(rockS, patchS), files)
+
+	return error, issues
+end
+
+local function save(rockS, patchS)
+	local files = extractFiles(rockS, patchS)
+
+	local error, issues = findIssues(rockS, patchS, files)
+	if #issues > 0 then
+		utils.printColoured("This package is incompatible", colors.red)
+
+		for _, v in ipairs(issues) do
+			local color = colors.yellow
+			if v[2] then color = colors.red end
+
+			utils.printColoured(" " .. v[1], color)
+		end
+
+		if error then
+			error("This package is incompatible", 0)
+		end
+	end
+
+	local source = patchspec.extractSource(rockS, patchS)
+	local downloaded = download(source, files)
 
 	if not downloaded then
-		error("Cannot find downloader for " .. rockS.source.url .. ". . Please suggest this package to be patched.", 0)
+		-- This should never be reached.
+		error("Cannot find downloader for " .. source.url .. ".", 0)
 	end
 
 	if patchS then
@@ -189,4 +232,5 @@ return {
 	getInstalled = getInstalled,
 	install = install,
 	remove = remove,
+	findIssues = findIssues,
 }
