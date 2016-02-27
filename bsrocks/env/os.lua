@@ -7,6 +7,7 @@ local checkType = utils.checkType
 
 return function(env)
 	local os, shell = os, shell
+	local temp = {}
 	env._G.os = {
 		clock = os.clock,
 		date = function(format, time)
@@ -62,6 +63,17 @@ return function(env)
 			checkType(tbl, "table")
 			return date.timestamp(tbl)
 		end,
-		tmpname = utils.tmpName
+		tmpname = function()
+			local name = utils.tmpName()
+			temp[name] = true
+			return name
+		end
 	}
+
+	-- Delete temp files
+	env.cleanup[#env.cleanup + 1] = function()
+		for file, _ in pairs(temp) do
+			pcall(fs.delete, file)
+		end
+	end
 end

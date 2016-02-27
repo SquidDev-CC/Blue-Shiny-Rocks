@@ -4,7 +4,8 @@ local parse = require "bsrocks.lib.parse"
 
 local function execute(...)
 	local running = true
-	local thisEnv = env()._G
+	local env = env()
+	local thisEnv = env._G
 
 	thisEnv.exit = setmetatable({}, {
 		__tostring = function() return "Call exit() to exit" end,
@@ -154,7 +155,7 @@ local function execute(...)
 		term.setTextColour(textColour)
 
 		local line = read(nil, history, autocomplete)
-		if not line then return end
+		if not line then break end
 
 		if #line:gsub("%s", "") > 0 then
 			for i = #history, 1, -1 do
@@ -181,6 +182,8 @@ local function execute(...)
 			input = "In [" .. counter .. "]: "
 		end
 	end
+
+	for _, v in pairs(env.cleanup) do v() end
 end
 
 local description = [[

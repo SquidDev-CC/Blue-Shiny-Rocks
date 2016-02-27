@@ -95,7 +95,7 @@ return function(env)
 		mode = (mode or "r"):gsub("%+", "")
 
 		local ok, result = pcall(fs.open, path, mode)
-		if not ok then
+		if not ok or not result then
 			return nil, result or "No such file or directory"
 		end
 		return setmetatable({ __handle = result }, fileMeta)
@@ -199,7 +199,9 @@ return function(env)
 
 	local temp = {}
 	function io.tmpfile()
-		return loadFile(utils.tmpName())
+		local name = utils.tmpName()
+		temp[name] = true
+		return loadFile(name, "w")
  	end
 
 	io.open = loadFile
