@@ -1,10 +1,10 @@
 patches = {
-  "/lua/pl/Date.lua",
-  "/lua/pl/dir.lua",
-  "/lua/pl/path.lua",
-  "/lua/pl/sip.lua",
-  "/lua/pl/stringx.lua",
-  "/lua/pl/text.lua",
+  "lua/pl/Date.lua",
+  "lua/pl/dir.lua",
+  "lua/pl/path.lua",
+  "lua/pl/sip.lua",
+  "lua/pl/stringx.lua",
+  "lua/pl/text.lua",
 }
 added = {}
 removed = {}
