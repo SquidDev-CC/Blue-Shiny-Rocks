@@ -1,18 +1,20 @@
 patches = {
+  lua_cliargs = "2.5-5",
   penlight = "scm-1",
+  busted = "2.0.rc11-0",
 }
 modules = {}
 commands = {}
 repository = {
-  luafilesystem = {
-    [ "1.6.3-1" ] = {
+  dkjson = {
+    [ "2.5-2" ] = {
       {
         arch = "rockspec",
       },
     },
   },
-  dkjson = {
-    [ "2.5-2" ] = {
+  luafilesystem = {
+    [ "1.6.3-1" ] = {
       {
         arch = "rockspec",
       },

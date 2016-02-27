@@ -1,0 +1,16 @@
+@@ -293,16 +293,35 @@
+ te.gmt)%0A
++  local names = %7B%7D%0A
+   for k,
+@@ -337,24 +337,77 @@
+ , _G, nil do
++ names%5Bk%5D = true end%0A  for k,_ in next, names, nil do
+ %0A    rawset(
+@@ -427,24 +427,43 @@
+ g%5Bk%5D)%0A  end%0A
++  local names = %7B%7D%0A
+   for k,_ in
+@@ -487,16 +487,65 @@
+ aded) do
++ names%5Bk%5D = true end%0A  for k,_ in pairs(names) do
+ %0A    pac

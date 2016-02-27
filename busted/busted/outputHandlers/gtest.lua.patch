@@ -1,0 +1,38 @@
+@@ -21,40 +21,8 @@
+ ay'%0A
+-local socket = require 'socket'%0A
+ loca
+@@ -132,17 +132,16 @@
+ .stdout)
+- 
+ %0Alocal i
+@@ -5891,38 +5891,32 @@
+ StartTime = 
+-socket.gettime
++os.clock
+ ()%0A    if to
+@@ -6249,38 +6249,32 @@
+ dTime_ms = (
+-socket.gettime
++os.clock
+ () - suiteSt
+@@ -6650,38 +6650,32 @@
+ StartTime = 
+-socket.gettime
++os.clock
+ ()%0A    fileT
+@@ -6837,38 +6837,32 @@
+ dTime_ms = (
+-socket.gettime
++os.clock
+ () - fileSta
+@@ -7162,30 +7162,24 @@
+ tTime = 
+-socket.gettime
++os.clock
+ ()%0A    i
+@@ -7363,22 +7363,16 @@
+  = (
+-socket.gettime
++os.clock
+ () -

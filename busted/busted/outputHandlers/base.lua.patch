@@ -1,0 +1,13 @@
+@@ -1,37 +1,4 @@
+-local socket = require 'socket'%0A%0A
+ retu
+@@ -2679,38 +2679,32 @@
+ startTime = 
+-socket.gettime
++os.clock
+ ()%0A    retur
+@@ -3101,22 +3101,16 @@
+ e = 
+-socket.gettime
++os.clock
+ ()%0A 
