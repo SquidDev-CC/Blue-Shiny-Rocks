@@ -18,6 +18,7 @@ Most functionality of Lua 5.1 is implemented, with the following caveats:
    - `string.gmatch` will infinitely loop on the `*` pattern (e.g. `\n*`)
    - `getmetatable` returns `nil` for strings.
    - String's metatable and the `string` library are not the same, so you cannot add string methods.
+   - `%b` errors when no match is found.
 
 The LuaRocks implementation is very minimal:
  - Currently only supports downloading GitHub repositories

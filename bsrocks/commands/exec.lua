@@ -54,7 +54,7 @@ return {
 				end
 
 				if msg == nil then
-					msg = "<No message>"
+					return "nil"
 				else
 					msg = tostring(msg)
 				end
@@ -66,6 +66,7 @@ return {
 		for _, v in pairs(env.cleanup) do v() end
 
 		if not success and msg ~= "<nop>" then
+			if msg == "nil" then msg = nil end
 			error(msg, 0)
 		end
 	end,

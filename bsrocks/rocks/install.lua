@@ -82,7 +82,7 @@ local function save(rockS, patchS)
 		local patchFiles = patchspec.extractFiles(patchS)
 		local downloadPatch = tree(patchS.server .. rockS.package .. '/', patchFiles)
 
-		files = patchspec.applyPatches(downloaded, downloadPatch, patchS.patches or {}, patchS.added or {}, patchS.removed or {})
+		downloaded = patchspec.applyPatches(downloaded, downloadPatch, patchS.patches or {}, patchS.added or {}, patchS.removed or {})
 	end
 
 	local build = rockS.build
@@ -208,7 +208,11 @@ local function install(name, version, constraints)
 		error("Cannot build type '" .. rockspec.build.type .. "'. Please suggest this package to be patched.", 0)
 	end
 
-	for _, deps in ipairs(rockspec.dependencies or {}) do
+	local deps = rockspec.dependencies
+	if patchspec and patchspec.dependencies then
+		deps = patchspec.dependencies
+	end
+	for _, deps in ipairs(deps or {}) do
 		local dependency = dependencies.parseDependency(deps)
 		local name = dependency.name:lower()
 		local current = installed[name]

@@ -88,13 +88,17 @@ local function execute(name)
 		end
 	end
 
-	if spec.dependencies and #spec.dependencies > 0 then
+	local deps = spec.dependencies
+	if patchS and patchS.dependencies then
+		deps = patchS.dependencies
+	end
+	if deps and #deps > 0 then
 		printColoured("Dependencies", colours.orange)
 		local len = 0
-		for _, deps in ipairs(spec.dependencies) do len = math.max(len, #deps) end
+		for _, deps in ipairs(deps) do len = math.max(len, #deps) end
 
 		len = len + 1
-		for _, deps in ipairs(spec.dependencies) do
+		for _, deps in ipairs(deps) do
 			local dependency = dependencies.parseDependency(deps)
 			local name = dependency.name
 			local current = installed[name]
