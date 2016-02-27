@@ -75,6 +75,7 @@ return function(options)
 
 	-- Customised loadfile function to work with relative files
 	function _G.loadfile(path)
+		path = fs.combine(env.dir, path)
 		if fs.exists(path) then
 			return load(fileWrapper.read(path), path, "t", _G)
 		else
@@ -83,7 +84,7 @@ return function(options)
 	end
 
 	function _G.dofile(path)
-		_G.loadfile(path)()
+		assert(_G.loadfile(path))()
 	end
 
 	function _G.print(...)
@@ -100,17 +101,28 @@ return function(options)
 		out:write("\n")
 	end
 
-	local errors = {}
+	local errors, nilFiller = {}, {}
+	local function getError(message)
+		if message == nil then return nil end
+
+		local result = errors[message]
+		errors[message] = nil
+		if result == nilFiller then
+			result = nil
+		elseif result == nil then
+			result = message
+		end
+		return result
+	end
 	local function extractError(...)
 		local success, message = ...
 		if success then
 			return ...
 		else
-			local result = errors[message] or message
-			errors[message] = nil
-			return false, result
+			return false, getError(message)
 		end
 	end
+	env.getError = getError
 
 	function _G.error(message, level)
 		level = level or 1
@@ -118,6 +130,7 @@ return function(options)
 
 		if type(message) ~= "string" then
 			local key = tostring({}) .. tostring(message)
+			if message == nil then message = nilFiller end
 			errors[key] = message
 			error(key, 0)
 		else
@@ -130,7 +143,7 @@ return function(options)
 	end
 
 	function _G.xpcall(func, handler)
-		return xpcall(func, function(result) return handler(extractError(result)) end)
+		return xpcall(func, function(result) return handler(getError(result)) end)
 	end
 
 	-- Setup other items

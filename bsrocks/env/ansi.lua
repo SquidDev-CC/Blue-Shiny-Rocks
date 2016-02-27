@@ -1,4 +1,7 @@
-local write = write
+--- ANSI Support
+-- @url https://en.wikipedia.org/wiki/ANSI_escape_code
+
+local write, term = write, term
 local type = type
 
 local defBack, defText = term.getBackgroundColour(), term.getTextColour()
@@ -8,10 +11,32 @@ local function create(func, col)
 	return function() func(col) end
 end
 
-local escapes = {
+local function clamp(val, min, max)
+	if val > max then
+		return max
+	elseif val < min then
+		return min
+	else
+		return val
+	end
+end
+
+local function move(x, y)
+	local cX, cY = term.getCursorPos()
+	local w, h = term.getSize()
+
+	term.setCursorPos(clamp(x + cX, 1, w), clamp(y + cY, 1, h))
+end
+
+local cols = {
 	['0'] = function()
 		setBack(defBack)
 		setText(defText)
+	end,
+	['7'] = function() -- Swap colours
+		local curBack = term.getBackgroundColour()
+		term.setBackgroundColour(term.getTextColour())
+		term.setText(curBack)
 	end,
 	['30'] = create(setText, colours.black),
 	['31'] = create(setText, colours.red),
@@ -49,6 +74,53 @@ local escapes = {
 	['106'] = create(setBack, colours.cyan),
 	['107'] = create(setBack, colours.white),
 }
+
+local savedX, savedY = 1, 1
+local actions = {
+	m = function(args)
+		for _, colour in ipairs(args) do
+			local func = cols[colour]
+			if func then func() end
+		end
+	end,
+	['A'] = function(args)
+		local y = tonumber(args[1])
+		if not y then return end
+		move(0, -y)
+	end,
+	['B'] = function(args)
+		local y = tonumber(args[1])
+		if not y then return end
+		move(0, y)
+	end,
+	['C'] = function(args)
+		local x = tonumber(args[1])
+		if not x then return end
+		move(x, 0)
+	end,
+	['D'] = function(args)
+		local x = tonumber(args[1])
+		if not x then return end
+		move(-x, 0)
+	end,
+	['H'] = function(args)
+		local x, y = tonumber(args[1]), tonumber(args[2])
+		if not x or not y then return end
+		local w, h = term.getSize()
+		term.setCursorPos(clamp(x, 1, w), clamp(y, 1, h))
+	end,
+	['J'] = function(args)
+		-- TODO: Support other modes
+		if args[1] == "2" then term.clear() end
+	end,
+	['s'] = function()
+		savedX, savedY = term.getCursorPos()
+	end,
+	['u'] = function()
+		term.setCursorPos(savedX, savedY)
+	end
+}
+
 local function writeAnsi(str)
 	if stdout and stdout.isPiped then
 		return stdout.write(text)
@@ -68,6 +140,8 @@ local function writeAnsi(str)
 			end
 
 			local remaining = true
+			local args, n = {}, 0
+			local mode
 			while remaining do
 				finish = finish + 1
 				start = finish
@@ -76,7 +150,8 @@ local function writeAnsi(str)
 					local s = str:sub(finish, finish)
 					if s == ";" then
 						break
-					elseif s == "m" then
+					elseif (s >= 'A' and s <= 'Z') or (s >= 'a' and s <= 'z') then
+						mode = s
 						remaining = false
 						break
 					elseif s == "" or s == nil then
@@ -86,10 +161,12 @@ local function writeAnsi(str)
 					end
 				end
 
-				local colour = str:sub(start, finish - 1)
-				local func = escapes[colour]
-				if func then func() end
+				n = n + 1
+				args[n] = str:sub(start, finish - 1)
 			end
+
+			local func = mode and actions[mode]
+			if func then func(args) end
 
 			offset = finish + 1
 		elseif offset == 1 then

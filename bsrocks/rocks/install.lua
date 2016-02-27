@@ -54,7 +54,7 @@ end
 local function save(rockS, patchS)
 	local files = extractFiles(rockS, patchS)
 
-	local error, issues = findIssues(rockS, patchS, files)
+	local errored, issues = findIssues(rockS, patchS, files)
 	if #issues > 0 then
 		utils.printColoured("This package is incompatible", colors.red)
 
@@ -62,10 +62,10 @@ local function save(rockS, patchS)
 			local color = colors.yellow
 			if v[2] then color = colors.red end
 
-			utils.printColoured(" " .. v[1], color)
+			utils.printColoured("  " .. v[1], color)
 		end
 
-		if error then
+		if errored then
 			error("This package is incompatible", 0)
 		end
 	end
@@ -208,7 +208,7 @@ local function install(name, version, constraints)
 		error("Cannot build type '" .. rockspec.build.type .. "'. Please suggest this package to be patched.", 0)
 	end
 
-	for _, deps in ipairs(rockspec.dependencies) do
+	for _, deps in ipairs(rockspec.dependencies or {}) do
 		local dependency = dependencies.parseDependency(deps)
 		local name = dependency.name:lower()
 		local current = installed[name]

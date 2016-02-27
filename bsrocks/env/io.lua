@@ -83,6 +83,10 @@ local fileMeta = {
 				handle.write(tostring(item))
 			end
 		end,
+
+		lines = function(self, ...)
+			return function() return self.__handle.readLine() end
+		end,
 	}
 }
 
@@ -104,7 +108,8 @@ return function(env)
 	do -- Setup standard outputs
 		local function void() end
 		local function close() return nil, "cannot close standard file" end
-		local function read() error("cannot read from output", 3) end
+		local function read() return nil, "bad file descriptor" end
+
 		env.stdout = setmetatable({
 			__handle = {
 				close = close,
@@ -210,6 +215,8 @@ return function(env)
  		if isFile(file) then
  			if file.__isClosed then return "closed file" end
  			return "file"
+		else
+			return type(file)
  		end
  	end
 

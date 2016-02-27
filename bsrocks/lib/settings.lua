@@ -19,7 +19,10 @@ local currentSettings = {
 		"%{installDirectory}/lib/?.lua",
 		"%{installDirectory}/lib/?/init.lua",
 	},
-	binPath = "/rocks/bin/?.lua;/rocks/bin/?",
+	binPath = {
+		"/rocks/bin/?.lua",
+		"/rocks/bin/?",
+	},
 	logFile = "bsrocks.log"
 }
 

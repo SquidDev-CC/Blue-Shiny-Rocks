@@ -1,4 +1,5 @@
 local env = require "bsrocks.env"
+local settings = require "bsrocks.lib.settings"
 
 local description = [[
 	<file>	The file to execute relative to the current directory.
@@ -16,7 +17,23 @@ return {
 	description = description,
 	execute = function(file, ...)
 		if not file then error("Expected file", 0) end
-		file = shell.resolve(file)
+
+		if file:sub(1, 1) == "@" then
+			file = file:sub(2)
+
+			local found
+			for _, path in ipairs(settings.binPath) do
+				path = path:gsub("%%{(%a+)}", settings):gsub("%?", file)
+				if fs.exists(path) then
+					found = path
+					break
+				end
+			end
+
+			file = found or shell.resolveProgram(file) or file
+		else
+			file = shell.resolve(file)
+		end
 
 		local loaded, msg = loadfile(file)
 		if not loaded then error(msg, 0) end
@@ -30,12 +47,21 @@ return {
 		local success, msg = xpcall(
 			function() return loaded(unpack(args)) end,
 			function(msg)
-				local code = msg:match("^Exit code: (%d+)")
-				if code and code == "0" then return "<nop>" end
+				msg = env.getError(msg)
+				if type(msg) == "string" then
+					local code = msg:match("^Exit code: (%d+)")
+					if code and code == "0" then return "<nop>" end
+				end
 
-				return env()._G.debug.traceback(msg, 2)
+				if msg == nil then
+					msg = "<No message>"
+				else
+					msg = tostring(msg)
+				end
+				return thisEnv.debug.traceback(msg, 2)
 			end
 		)
+		loaded(...)
 
 		for _, v in pairs(env.cleanup) do v() end
 

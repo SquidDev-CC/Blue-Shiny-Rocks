@@ -21,6 +21,25 @@ local downloaders = {
 		print("Downloading " .. repo .. "@" .. branch)
 		return tree('https://raw.github.com/'..repo..'/'..branch..'/', files)
 	end,
+	function(source, files)
+		local url = source.single
+		if not url then return end
+
+		if not files then
+			return true
+		end
+
+		if #files ~= 1 then error("Expected 1 file for single, got " .. #files, 0) end
+
+		local handle, msg = http.get(url)
+		if not handle then
+			error(msg or "Cannot download " .. url, 0)
+		end
+
+		local contents = handle.readAll()
+		handle.close()
+		return { [files[1]] = contents }
+	end
 
 }
 
