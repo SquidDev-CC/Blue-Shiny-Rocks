@@ -1,0 +1,9 @@
+@@ -5937,17 +5937,16 @@
+ rator()%0A
+-%0A
+     loca
+@@ -6764,27 +6764,21 @@
+     
+-getmetatable(%22%22).__
++string.format
+ mod 

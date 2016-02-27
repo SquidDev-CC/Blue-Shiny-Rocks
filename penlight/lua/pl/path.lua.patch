@@ -3,11 +3,24 @@
 -utils.dir_separator == '%5C%5C'
 +false
  %0A%0Alo
-@@ -8895,187 +8895,8 @@
- hen%0A
--        local home = getenv('HOME')%0A        if not home then -- has to be Windows%0A            home = getenv 'USERPROFILE' or (getenv 'HOMEDRIVE' .. getenv 'HOMEPATH')%0A        end%0A
+@@ -8903,165 +8903,61 @@
      
-@@ -8910,14 +8910,8 @@
- urn 
--home..
+-local home = getenv('HOME')%0A        if not home then -- has to be Windows%0A            home = getenv 'USERPROFILE' or (getenv 'HOMEDRIVE' .. getenv 'HOMEPATH'
++if sub(P,2, 2) == %22/%22 then%0A            return sub(P,2
+ )%0A  
+@@ -8967,32 +8967,38 @@
+    e
+-nd%0A
++lse%0A   
+         
++ 
+ return 
+-home
++%22/%22 
+ ..
++ 
  sub(
+@@ -8998,24 +8998,36 @@
+ .. sub(P,2)%0A
++        end%0A
+     else%0A   

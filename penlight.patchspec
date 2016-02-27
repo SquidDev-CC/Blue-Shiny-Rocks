@@ -1,10 +1,14 @@
 patches = {
-  "/lua/pl/path.lua",
+  "/lua/pl/Date.lua",
   "/lua/pl/dir.lua",
+  "/lua/pl/path.lua",
+  "/lua/pl/sip.lua",
+  "/lua/pl/stringx.lua",
+  "/lua/pl/text.lua",
 }
 added = {}
 removed = {}
 source = {
-  url = "https://github.com/stevedonovan/Penlight/archive/1.3.2.tar.gz",
+  url = "https://github.com/stevedonovan/Penlight/archive/16d149338af9efc910528641c5240c5641aeb8db.tar.gz",
 }
-version = "1.3.2-2"
+version = "scm-1"

@@ -66,16 +66,9 @@ local attributeProviders = {
 	permissions = function() return "rwxrwxrwx" end
 }
 
-local function resolve(path)
-	if path:find("..", 1, true) then
-		return shell.resolve(path)
-	end
-
-	return path
-end
 
 function M.attributes(path, name)
-	path = resolve(path)
+	path = shell.resolve(path)
 
 	if not fs.exists(path) then
 		return nil, ("cannot obtain information from file `%s'"):format(path)
@@ -99,7 +92,7 @@ function M.attributes(path, name)
 end
 
 function M.chdir(path)
-	path = resolve(path)
+	path = shell.resolve(path)
 
 	if fs.exists(path) and fs.isDir(path) then
 		shell.setDir(path)
@@ -110,7 +103,7 @@ function M.chdir(path)
 end
 
 function M.currentdir()
-	return shell.dir()
+	return "/" .. shell.dir()
 end
 
 local function closeDir(item)
@@ -138,7 +131,7 @@ end
 local dirMeta = { __call = iterDir, __metatable = false }
 
 function M.dir(path)
-	path = resolve(path)
+	path = shell.resolve(path)
 
 	if fs.exists(path) and fs.isDir(path) then
 		local items = fs.list(path)
@@ -159,7 +152,7 @@ function M.dir(path)
 end
 
 function M.mkdir(path)
-	path = resolve(path)
+	path = shell.resolve(path)
 
 	if fs.isReadOnly(path) then
 		return nil, "Permission denied"
@@ -174,7 +167,7 @@ function M.mkdir(path)
 end
 
 function M.rmdir(path)
-	path = resolve(path)
+	path = shell.resolve(path)
 
 	if fs.isReadOnly(path) then
 		return nil, "Permission denied"
@@ -193,7 +186,7 @@ function M.setmode(path, mode)
 end
 
 function M.touch(path)
-	path = resolve(path)
+	path = shell.resolve(path)
 
 	if fs.isReadOnly(path) then
 		return nil, "Permission denied"
