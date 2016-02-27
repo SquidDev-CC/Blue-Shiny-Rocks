@@ -44,15 +44,22 @@ local function traceback(thread, message, level)
 	return contents
 end
 
-local printColoured
+local printColoured, writeColoured
 if term.isColour() then
 	printColoured = function(text, colour)
 		term.setTextColour(colour)
 		print(text)
 		term.setTextColour(colours.white)
 	end
+
+	writeColoured = function(text, colour)
+		term.setTextColour(colour)
+		write(text)
+		term.setTextColour(colours.white)
+	end
 else
 	printColoured = function(text) print(text) end
+	writeColoured = write
 end
 
 local function doLog(msg)
@@ -164,6 +171,7 @@ return {
 	escapePattern = escapePattern,
 	log = log,
 	printColoured = printColoured,
+	writeColoured = writeColoured,
 	printIndent = printIndent,
 	tmpName = tmpName,
 	traceback = traceback,

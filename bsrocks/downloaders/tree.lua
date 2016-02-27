@@ -23,6 +23,10 @@ local function tree(prefix, files)
 
 	local count = 0
 	local total = #files
+	if total == 0 then
+		print("No files to download")
+		return {}
+	end
 
 	-- Download a file and store it in the tree
 	local errored = false

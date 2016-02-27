@@ -11,6 +11,7 @@ return function(env)
 
 	local path = settings.libPath
 	if type(path) == "table" then path = table.concat(path, ";") end
+	path = path:gsub("%%{(%a+)}", settings)
 
 	local package = {
 		loaded = {},

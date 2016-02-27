@@ -18,7 +18,7 @@ local function assertExists(file, name, level)
 end
 
 local function readDir(directory)
-	local len = #directory + 1
+	local offset = #directory + 2
 	local stack, n = { directory }, 1
 
 	local files = {}
@@ -33,7 +33,7 @@ local function readDir(directory)
 				stack[n] = fs.combine(top, file)
 			end
 		else
-			files[top:sub(len)] = read(top)
+			files[top:sub(offset)] = read(top)
 		end
 	end
 

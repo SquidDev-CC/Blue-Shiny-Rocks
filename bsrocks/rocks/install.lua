@@ -79,10 +79,10 @@ local function save(rockS, patchS)
 	end
 
 	if patchS then
-		local patchFiles = rockspec.extractFiles(patchS)
-		local downloadPatch = tree(patchS.server .. rockS.name, patchFiles)
+		local patchFiles = patchspec.extractFiles(patchS)
+		local downloadPatch = tree(patchS.server .. rockS.package .. '/', patchFiles)
 
-		files = applyPatches(downloaded, downloadPatch, patchS.patches or {}, patchS.added or {}, patchS.removed or {})
+		files = patchspec.applyPatches(downloaded, downloadPatch, patchS.patches or {}, patchS.added or {}, patchS.removed or {})
 	end
 
 	local build = rockS.build

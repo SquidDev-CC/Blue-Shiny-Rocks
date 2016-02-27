@@ -63,6 +63,7 @@ local function extractFiles(patch)
 	if patch.added then
 		for _, file in ipairs(patch.added) do
 			n = n + 1
+
 			files[n] = file
 		end
 	end
@@ -70,6 +71,7 @@ local function extractFiles(patch)
 	if patch.patches then
 		for _, file in ipairs(patch.patches) do
 			n = n + 1
+
 			files[n] = file .. ".patch"
 		end
 	end

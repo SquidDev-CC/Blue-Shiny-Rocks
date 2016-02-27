@@ -11,7 +11,7 @@ local function completeMultipleChoice(text, options)
 end
 
 local options = {
-	"dest", "dump-settings", "exec", "install", "list",
+	"desc", "dump-settings", "exec", "install", "list",
 	"remove", "repl", "search",
 
 	"add-patchspec", "add-rockspec", "apply-patches", "fetch", "make-patches"
@@ -20,9 +20,9 @@ local options = {
 local function completeBsRocks(shell, index, text, previous)
     if index == 1 then
         return completeMultipleChoice(text, options)
-    elseif nIndex == 2 then
+    elseif index == 2 then
         if previous[2] == "exec" then
-            return fs.complete(sText, shell.dir(), true, false )
+            return fs.complete(text, shell.dir(), true, false )
         end
     end
 end

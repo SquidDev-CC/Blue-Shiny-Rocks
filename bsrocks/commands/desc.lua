@@ -2,11 +2,12 @@ local dependencies = require "bsrocks.rocks.dependencies"
 local download = require "bsrocks.downloaders"
 local install = require "bsrocks.rocks.install"
 local patchspec = require "bsrocks.rocks.patchspec"
-local printColoured = require "bsrocks.lib.utils".printColoured
 local rockspec = require "bsrocks.rocks.rockspec"
 local settings = require "bsrocks.lib.settings"
+local utils = require "bsrocks.lib.utils"
 
 local servers = settings.servers
+local printColoured, writeColoured = utils.printColoured, utils.writeColoured
 
 local function execute(name)
 	if not name then error("Expected <name>", 0) end
@@ -23,22 +24,32 @@ local function execute(name)
 
 		if not manifest then error("Cannot find '" .. name .. "'", 0) end
 
-		local version = rockspec.latestVersion(manifest, name)
-		spec = rockspec.fetchRockspec(manifest.server, name, version)
-
-
 		local patchManifest = patchspec.findPatchspec(name)
+
+		local version
+		if patchManifest then
+			version = patchManifest.patches[name]
+		else
+			version = rockspec.latestVersion(manifest, name, constraints)
+		end
+
+		spec = rockspec.fetchRockspec(manifest.server, name, version)
 		patchS = patchManifest and patchspec.fetchPatchspec(patchManifest.server, name)
 	end
 
 	write(name .. ": " .. spec.version .. " ")
 	if spec.builtin then
-		printColoured("Built In", colours.magenta)
+		writeColoured("Built In", colours.magenta)
 	elseif isInstalled then
-		printColoured("Installed", colours.green)
+		writeColoured("Installed", colours.green)
 	else
-		printColoured("Not installed", colours.red)
+		writeColoured("Not installed", colours.red)
 	end
+
+	if patchS then
+		writeColoured(" (+Patchspec)", colours.lime)
+	end
+	print()
 
 	local desc = spec.description
 	if desc then
@@ -52,7 +63,7 @@ local function execute(name)
 
 			-- Remove leading and trailing whitespace
 			detailed = detailed:gsub("^\n+", ""):gsub("%s+$", "")
-			printColoured(detailed, colours.lightGrey)
+			printColoured(detailed, colours.white)
 		end
 
 		if desc.homepage then
@@ -93,7 +104,7 @@ local function execute(name)
 			if current then
 				local version = dependencies.parseVersion(current.version)
 				if not dependencies.matchConstraints(version, dependency.constraints) then
-					printColoured("Out of date", colours.yellow)
+					printColoured("Wrong version", colours.yellow)
 				elseif current.builtin then
 					printColoured("Built In", colours.magenta)
 				else
