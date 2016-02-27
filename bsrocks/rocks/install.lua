@@ -90,7 +90,7 @@ local function save(rockS, patchS)
 		if build.modules then
 			local moduleDir = fs.combine(installDirectory, "lib")
 			for module, file in pairs(build.modules) do
-				fileWrapper.write(fs.combine(moduleDir, module:gsub("%.", "/") .. ".lua"), files[file])
+				fileWrapper.write(fs.combine(moduleDir, module:gsub("%.", "/") .. ".lua"), downloaded[file])
 			end
 		end
 
@@ -99,7 +99,7 @@ local function save(rockS, patchS)
 			for name, install in pairs(build.install) do
 				local dir = fs.combine(installDirectory, name)
 				for name, file in pairs(install) do
-					fileWrapper.write(fs.combine(dir, name .. ".lua"), files[file])
+					fileWrapper.write(fs.combine(dir, name .. ".lua"), downloaded[file])
 				end
 			end
 		end

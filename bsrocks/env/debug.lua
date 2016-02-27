@@ -16,7 +16,7 @@ local function getInfo(thread, func, what)
 	local data = {
 		what = "lua",
 		source = "",
-		short_source = "",
+		short_src = "",
 		linedefined = -1,
 		lastlinedefined = -1,
 		currentline = -1,
@@ -30,10 +30,13 @@ local function getInfo(thread, func, what)
 	if t == "number" or t == "string" then
 		func = tonumber(func)
 
-		local _, name = pcall(error, "", 2 + func)
-		name = name:gsub(":?[^:]*: *$", "", 1)
+		local _, source = pcall(error, "", 2 + func)
+		local name = source:gsub(":?[^:]*: *$", "", 1)
 		data.source = "@" .. name
-		data.short_source = name
+		data.short_src = name
+
+		local line = tonumber(source:match("^[^:]+:([%d]+):") or "")
+		if line then data.currentline = line end
 	elseif t == "function" then
 		-- We really can't do much
 		data.func = func
@@ -52,7 +55,7 @@ return function(env)
 		getinfo = getInfo,
 		getlocal = err("getlocal"),
 		gethook = err("gethook"),
-		getmetatable = getmetatable,
+		getmetatable = env._G.getmetatable,
 		getregistry = err("getregistry"),
 		setfenv = setfenv,
 		sethook = err("sethook"),

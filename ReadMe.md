@@ -5,13 +5,19 @@ Blue Shiny Rocks, or BSRocks for short serves two purposes:
  - Lightweight implementation of [LuaRocks](https://luarocks.org/)
 
 Most functionality of Lua 5.1 is implemented, with the following caveats:
- - The [debug library](http://www.lua.org/manual/5.1/manual.html#5.9) is only partially implemented.
+ - The [debug library](http://www.lua.org/manual/5.1/manual.html#5.9) is only partially implemented:
    - `debug.traceback` does not accept threads
    - `debug.getinfo` only accepts a numeric value
    - `.getmetatable`, `.setmetatable`, `.getfenv` and `.setfenv` are just their normal versions
    - Everything else is not implemented
- - `string.gmatch` will infinitely loop on the `*` pattern (e.g. `\n*`)
  - `os` library is only partially implemented
+ - `io.popen` is not implemented.
+ - Several LuaJ bugs:
+   - `\011` is not considered whitespace
+   - `string.format` floating point specifiers don't work (e.g. `%5.2f`)
+   - `string.gmatch` will infinitely loop on the `*` pattern (e.g. `\n*`)
+   - `getmetatable` returns `nil` for strings.
+   - String's metatable and the `string` library are not the same, so you cannot add string methods.
 
 The LuaRocks implementation is very minimal:
  - Currently only supports downloading GitHub repositories

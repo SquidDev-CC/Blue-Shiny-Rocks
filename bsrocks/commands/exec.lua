@@ -22,15 +22,21 @@ return {
 		if not loaded then error(msg, 0) end
 
 		local thisEnv = env()._G
-		thisEnv.arg = {[0] = fil, ... }
+		thisEnv.arg = {[-2] = "/" .. shell.getRunningProgram(), [-1] = "exec", [0] = "/" .. file, ... }
 		setfenv(loaded, thisEnv)
 
 		local args = {...}
-		xpcall(
+		local success, msg = xpcall(
 			function() return loaded(unpack(args)) end,
 			function(msg)
-				printError(env()._G.debug.traceback(msg, 2))
+                local code = msg:match("^Exit code: (%d+)")
+                if code and code == "0" then return "<nop>" end
+
+				return env()._G.debug.traceback(msg, 2)
 			end
 		)
+		if not success and msg ~= "<nop>" then
+			error(msg, 0)
+		end
 	end,
 }

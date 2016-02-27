@@ -103,7 +103,7 @@ return function(env)
 
 	do -- Setup standard outputs
 		local function void() end
-		local function close() error("cannot close standard file", 3) end
+		local function close() return nil, "cannot close standard file" end
 		local function read() error("cannot read from output", 3) end
 		env.stdout = setmetatable({
 			__handle = {

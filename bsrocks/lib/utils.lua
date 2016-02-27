@@ -16,7 +16,7 @@ end
 --- Generate a temp name for a file
 -- Pretty safe, though not 100% accurate
 local function tmpName()
-	return "/tmp/" .. os.clock() .. "-" .. math.random(1, 2^32)
+	return "/tmp/" .. os.clock() .. "-" .. math.random(1, 2^31-1)
 end
 
 local function traceback(thread, message, level)
@@ -30,7 +30,7 @@ local function traceback(thread, message, level)
 	local result = {"stack traceback: "}
 	for i = 2, 20 do
 		local _, err = pcall(error, "", i + level)
-		if err == "" then
+		if err == "" or err == "nil:" then
 			break
 		end
 

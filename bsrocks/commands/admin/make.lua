@@ -33,8 +33,6 @@ local function execute(...)
 		fileWrapper.assertExists(changed, "changed sources for " .. name, 0)
 		fileWrapper.assertExists(info, "patchspec for " .. name, 0)
 
-		fs.delete(patch)
-
 		local data = serialize.unserialize(fileWrapper.read(info))
 		local originalSources = fileWrapper.readDir(original)
 		local changedSources = fileWrapper.readDir(changed)

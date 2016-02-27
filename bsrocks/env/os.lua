@@ -2,18 +2,29 @@
 -- http://www.lua.org/manual/5.1/manual.html#5.8
 
 local utils = require "bsrocks.lib.utils"
+local date = require "bsrocks.env.date"
 local checkType = utils.checkType
 
 return function(env)
-	local os, shell = _G.os, _G.shell
+	local os, shell = os, shell
 	env._G.os = {
 		clock = os.clock,
 		date = function(format, time)
-			format = checkType(format or "*t", "string")
+			format = checkType(format or "%c", "string")
 			time = checkType(time or os.time(), "number")
 
-			-- TODO: Implement this properly
-			return textutils.formatTime(time)
+			-- Ignore UTC/CUT
+			if format:sub(1, 1) == "!" then format = format:sub(2) end
+
+			local d = date.create(time)
+
+			if format == "*t" then
+				return d
+			elseif format == "%c" then
+				return date.asctime(d)
+			else
+				return date.strftime(format, d)
+			end
 		end,
 
 
@@ -22,8 +33,14 @@ return function(env)
 			return t2 - t1
 		end,
 
-		execute = function(command) return shell.run(command) and 0 or 1 end,
-		exit  = function(code) error("Exit code: " .. (code or 0), 2) end,
+		execute = function(command)
+			if shell.run(command) then
+				return 0
+			else
+				return 1
+			end
+		end,
+		exit  = function(code) error("Exit code: " .. (code or 0), 0) end,
 		getfenv = function(name)
 			-- I <3 ClamShell
 			if shell.getenv then
@@ -39,7 +56,12 @@ return function(env)
 		end,
 		setlocale = function() end,
 		-- Technically not
-		time  = os.time,
+		time = function(tbl)
+			if not tbl then return os.time() end
+
+			checkType(tbl, "table")
+			return date.timestamp(tbl)
+		end,
 		tmpname = utils.tmpName
 	}
 end

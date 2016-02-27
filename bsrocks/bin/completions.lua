@@ -27,4 +27,6 @@ local function completeBsRocks(shell, index, text, previous)
     end
 end
 
-shell.setCompletionFunction(shell.resolve(...), completeBsRocks)
+for i = 1, select('#', ...) do
+    shell.setCompletionFunction(shell.resolve(select(i, ...)), completeBsRocks)
+end

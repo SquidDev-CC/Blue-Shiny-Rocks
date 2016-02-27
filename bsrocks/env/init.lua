@@ -1,3 +1,5 @@
+local fileWrapper = require "bsrocks.lib.files"
+
 local function addWithMeta(src, dest)
 	for k, v in pairs(src) do
 		if dest[k] == nil then
@@ -48,9 +50,6 @@ return function(options)
 		return path
 	end
 
-	-- Copy functions across
-	addWithMeta(getfenv(), _G)
-
 	function _G.load(func, chunk)
 		local cache = {}
 		while true do
@@ -76,12 +75,11 @@ return function(options)
 
 	-- Customised loadfile function to work with relative files
 	function _G.loadfile(path)
-		local result, message = loadfile(env.resolve(path))
-		if result then
-			return setfenv(result, _G)
+		if fs.exists(path) then
+			return load(fileWrapper.read(path), path, "t", _G)
+		else
+			return nil, "File not found"
 		end
-
-		return result, message
 	end
 
 	function _G.dofile(path)
@@ -136,6 +134,8 @@ return function(options)
 	end
 
 	-- Setup other items
+	require "bsrocks.env.fixes"(env)
+
 	require "bsrocks.env.io"(env)
 	require "bsrocks.env.os"(env)
 
@@ -144,6 +144,9 @@ return function(options)
 	end
 
 	require "bsrocks.env.package"(env)
+
+	-- Copy functions across
+	addWithMeta(getfenv(), _G)
 
 	return env
 end

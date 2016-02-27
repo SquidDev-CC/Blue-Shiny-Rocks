@@ -1,8 +1,9 @@
 --- The main package library - a pure lua reimplementation of the package library in lua
 -- See: http://www.lua.org/manual/5.1/manual.html#5.3
 
-local utils = require "bsrocks.lib.utils"
+local fileWrapper = require "bsrocks.lib.files"
 local settings = require "bsrocks.lib.settings"
+local utils = require "bsrocks.lib.utils"
 local checkType = utils.checkType
 
 return function(env)
@@ -70,14 +71,18 @@ return function(env)
 				local filePath = env.resolve(path:sub(pos, start - 1):gsub("%?", name, 1))
 				pos = start + 1
 
-				local loaded, err = loadfile(filePath)
+				local loaded, err
 
-				if not fs.exists(filePath) then
-					loaded, err = loadfile(filePath .. ".lua")
+				if fs.exists(filePath) then
+					loaded, err = load(fileWrapper.read(filePath), filePath, "t", _G)
+				elseif fs.exists(filePath .. ".lua") then
+					loaded, err = load(fileWrapper.read(filePath .. ".lua"), filePath, "t", _G)
+				else
+					err = "File not found"
 				end
 
 				if type(loaded) == "function" then
-					return setfenv(loaded, _G)
+					return loaded
 				end
 
 				errs[#errs + 1] = "'" .. filePath .. "': " .. err
@@ -193,28 +198,7 @@ return function(env)
 			module._PACKAGE = name:gsub("%.[^%.]+$", "") or "" -- Everything before the last .
 		end
 
-		-- Technically we need to set the environment above to access this.
-		-- Instead we just set the __newindex functions t o use it
-		local env = getfenv(2)
-
-		local meta = getmetatable(env)
-		if meta == nil then
-			meta = {}
-			setmetatable(env, meta)
-		end
-
-		local rawset = rawset
-		-- Copy all variables over
-		for k, v in pairs(module) do
-			rawset(env, k, v)
-		end
-
-		-- We rawset the current table as well so things like
-		--  for k, v in pairs(getfenv()) do ... end work
-		meta.__newindex = function(self, key, value)
-			rawset(self, key, value)
-			module[key] = value
-		end
+		setfenv(2, module)
 
 		-- Applies functions. This could be package.seeall or similar
 		for _, modifier in pairs({...}) do
