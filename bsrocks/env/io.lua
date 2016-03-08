@@ -45,9 +45,10 @@ local fileMeta = {
 
 			local data = {...}
 			local n = select("#", ...)
+			if n == 0 then n = 1 end
 			for i = 1, n do
-				local format = data[i]
-				format = checkType(format, "string"):gsub("*", "", true) -- "*" is not needed after Lua 5.1 - lets be friendly
+				local format = data[i] or "l"
+				format = checkType(format, "string"):gsub("%*", "") -- "*" is not needed after Lua 5.1 - lets be friendly
 				if format == "l" then
 					returns[#returns + 1] = handle.readLine()
 				elseif format == "a" then
@@ -59,7 +60,7 @@ local fileMeta = {
 				end
 			end
 
-			return unpack(data)
+			return unpack(returns)
 		end,
 
 		seek = function(self, ...)
@@ -85,7 +86,7 @@ local fileMeta = {
 		end,
 
 		lines = function(self, ...)
-			return function() return self.__handle.readLine() end
+			return self.__handle.readLine
 		end,
 	}
 }

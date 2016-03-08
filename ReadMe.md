@@ -10,15 +10,17 @@ Most functionality of Lua 5.1 is implemented, with the following caveats:
    - `debug.getinfo` only accepts a numeric value
    - `.getmetatable`, `.setmetatable`, `.getfenv` and `.setfenv` are just their normal versions
    - Everything else is not implemented
- - `os` library is only partially implemented
+ - `os.setlocale` library is not implemented
  - `io.popen` is not implemented.
  - Several LuaJ bugs:
-   - `\011` is not considered whitespace
+   - `\011` is not considered whitespace\*
    - `string.format` floating point specifiers don't work (e.g. `%5.2f`)
-   - `string.gmatch` will infinitely loop on the `*` pattern (e.g. `\n*`)
-   - `getmetatable` returns `nil` for strings.
+   - `string.gmatch` will infinitely loop on the `*` pattern (e.g. `\n*`)\*
+   - `getmetatable` returns the string library for strings.
    - String's metatable and the `string` library are not the same, so you cannot add string methods.
-   - `%b` errors when no match is found.
+   - `%b` errors when no match is found.\*
+
+\* *Fixed in CC 1.79pr2 or CCTweaks 0.3.1*
 
 The LuaRocks implementation is very minimal:
  - Currently only supports downloading GitHub repositories

@@ -61,7 +61,6 @@ return {
 				return thisEnv.debug.traceback(msg, 2)
 			end
 		)
-		loaded(...)
 
 		for _, v in pairs(env.cleanup) do v() end
 

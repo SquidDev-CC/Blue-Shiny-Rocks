@@ -9,8 +9,11 @@ local function copy(tbl)
 end
 
 local function getmeta(obj)
-	if type(obj) == "table" then
+	local t = type(obj)
+	if t == "table" then
 		return getmetatable(obj)
+	elseif t == "string" then
+		return string
 	else
 		return nil
 	end

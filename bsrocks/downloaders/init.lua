@@ -6,9 +6,11 @@ local downloaders = {
 		local url = source.url
 		if not url then return end
 
-		local repo = url:match("git://github%.com/(.*)")
+		local repo = url:match("git://github%.com/(.*)$")
 		local branch = source.branch or source.tag or "master"
-		if not repo then
+		if repo then
+			repo = repo:gsub("%.git$", "")
+		else
 			-- If we have the archive then we can also fetch from GitHub
 			repo, branch = url:match("https?://github%.com/(.*)/archive/(.*).tar.gz")
 			if not repo then return end
