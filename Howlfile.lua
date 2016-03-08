@@ -2,14 +2,25 @@ Options:Default "trace"
 
 local files = Files()
 	:Include "wild:bsrocks/*.lua"
+	:Exclude "bsrocks/bin/completions.lua"
+	:Exclude "bsrocks/bin/repl.lua"
 	:Startup "bsrocks/bin/bsrocks.lua"
+
+local replFiles = Files()
+	:Include "bsrocks/bin/repl.lua"
+	:Include "bsrocks/lib/parse.lua"
+	:Include "bsrocks/commands/repl.lua"
+	:Include "bsrocks/lib/dump.lua"
+	:Startup "bsrocks/bin/repl.lua"
 
 Tasks:Clean("clean", "build")
 Tasks:AsRequire("develop", files, "build/bsrocksD.lua"):Link()
 	:Description "Generates a bootstrap file for development"
 
 Tasks:AsRequire("main", files, "build/bsrocks.un.lua")
+Tasks:AsRequire("repl", replFiles, "build/repl.lua")
 Tasks:Minify("minify", "build/bsrocks.un.lua", "build/bsrocks.min.un.lua")
+Tasks:Minify("replMin", "build/repl.lua", "build/repl.min.lua")
 
 -- Add licenses. We kinda require this because diffmatchpatch
 local function readFile(path)
@@ -46,5 +57,5 @@ Tasks:Task "cleanup" (function()
 end):Description "Destory unlicensed files"
 
 
-Tasks:Task "build" {"clean", "licenses", "cleanup"} :Description "Main build task"
+Tasks:Task "build" {"clean", "licenses", "replMin", "cleanup"} :Description "Main build task"
 Tasks:Default "build"
