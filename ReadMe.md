@@ -23,6 +23,6 @@ The short term goals is to port several major packages.
  - [x] [LuaFileSystem](https://keplerproject.github.io/luafilesystem/)
  - [x] [Penlight](https://github.com/stevedonovan/Penlight)
  - [x] [Busted](https://github.com/Olivine-Labs/busted)
- - [ ] [LDoc](https://github.com/stevedonovan/LDoc)
+ - [x] [LDoc](https://github.com/stevedonovan/LDoc)
 
 Ideally any pure-lua package could be run on a CC computer.

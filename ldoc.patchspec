@@ -1,0 +1,5 @@
+source = {
+  url = "git://github.com/stevedonovan/LDoc.git",
+  branch = "aa4cd9daf8fbed4b122b025fbc82e5ca53d97416",
+}
+version = "1.4.4-1"
