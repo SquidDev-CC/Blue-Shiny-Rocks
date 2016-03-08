@@ -72,6 +72,8 @@ local function serializeImpl(t, tracking, indent, tupleLength)
 						entry = "[" .. serializeImpl(k, tracking, subIndent) .. "] = " .. serializeImpl(v, tracking, subIndent)
 					end
 
+					entry = subIndent .. entry
+
 					if not first then
 						entry = nextNewLine .. entry
 					else
@@ -79,7 +81,7 @@ local function serializeImpl(t, tracking, indent, tupleLength)
 					end
 
 					n = n + 1
-					result[n] = subIndent .. entry
+					result[n] = entry
 				end
 			end
 
