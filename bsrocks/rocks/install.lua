@@ -37,13 +37,17 @@ local function findIssues(rockS, patchS, files)
 	end
 
 	for _, file in ipairs(files) do
-		local ext = file:match("[^/]%.(%w+)$")
-		if ext and ext ~= "lua" then
-			if ext == "c" or ext == "cpp" or ext == "h" or ext == "hpp" then
-				issues[#issues + 1] = { file .. " is a C file. This will not work.", true }
-				error = true
-			else
-				issues[#issues + 1] = { "File extension is not lua (for " .. file .. "). It may not work correctly.", false }
+		if type(file) == "table" then
+			issues[#issues + 1] = { table.concat(file, ", ") .. " are packaged into one module. This will not work.", true }
+		else
+			local ext = file:match("[^/]%.(%w+)$")
+			if ext and ext ~= "lua" then
+				if ext == "c" or ext == "cpp" or ext == "h" or ext == "hpp" then
+					issues[#issues + 1] = { file .. " is a C file. This will not work.", true }
+					error = true
+				else
+					issues[#issues + 1] = { "File extension is not lua (for " .. file .. "). It may not work correctly.", false }
+				end
 			end
 		end
 	end
