@@ -1,0 +1,5 @@
+version = "0.7.0-1"
+source = {
+  url = "https://github.com/LuaDist/alt-getopt.git",
+  branch = "master",
+}
