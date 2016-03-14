@@ -103,6 +103,9 @@ local function save(rockS, patchS)
 			for name, install in pairs(build.install) do
 				local dir = fs.combine(installDirectory, name)
 				for name, file in pairs(install) do
+					if type(name) == "number" and name >= 1 and name <= #install then
+						name = file
+					end
 					fileWrapper.write(fs.combine(dir, name .. ".lua"), downloaded[file])
 				end
 			end

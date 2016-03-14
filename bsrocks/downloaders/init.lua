@@ -6,7 +6,7 @@ local downloaders = {
 		local url = source.url
 		if not url then return end
 
-		local repo = url:match("git://github%.com/(.*)$")
+		local repo = url:match("git://github%.com/(.*)$") or url:match("https?://github%.com/(.*)$")
 		local branch = source.branch or source.tag or "master"
 		if repo then
 			repo = repo:gsub("%.git$", "")

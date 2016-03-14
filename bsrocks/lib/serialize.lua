@@ -46,17 +46,30 @@ local function serializeImpl(value, tracking, indent, root)
 				resultN = resultN + 1
 				result[resultN] = subIndent .. serializeImpl(v, tracking, subIndent, false) .. finish
 			end
+			local keys, keysN, allString = {}, 0, true
+			local t
 			for k,v in pairs(value) do
 				if not seen[k] then
-					local entry
-					if type(k) == "string" and not keywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
-						entry = k .. " = " .. serializeImpl(v, tracking, subIndent)
-					else
-						entry = "[ " .. serializeImpl(k, tracking, subIndent) .. " ] = " .. serializeImpl(v, tracking, subIndent)
-					end
-					resultN = resultN + 1
-					result[resultN] = subIndent .. entry .. finish
+					allString = allString and type(k) == "string"
+					keysN = keysN + 1
+					keys[keysN] = k
 				end
+			end
+
+			if allString then
+				table.sort(keys)
+			end
+
+			for _, k in ipairs(keys) do
+				local entry
+				local v = value[k]
+				if type(k) == "string" and not keywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
+					entry = k .. " = " .. serializeImpl(v, tracking, subIndent)
+				else
+					entry = "[ " .. serializeImpl(k, tracking, subIndent) .. " ] = " .. serializeImpl(v, tracking, subIndent)
+				end
+				resultN = resultN + 1
+				result[resultN] = subIndent .. entry .. finish
 			end
 
 			if not root then
