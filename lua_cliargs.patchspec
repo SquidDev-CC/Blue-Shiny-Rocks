@@ -1,6 +1,6 @@
+added = {}
 patches = {
   "src/cliargs.lua",
 }
-added = {}
 removed = {}
 version = "2.5-5"

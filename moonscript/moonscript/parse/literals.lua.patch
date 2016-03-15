@@ -1,0 +1,15 @@
+@@ -175,16 +175,112 @@
+ 0.C%0Aend%0A
++local lpeg = require(%22lpeg%22)%0Alocal L = lpeg.luversion and lpeg.L or function(v)%0A  return #v%0Aend%0A
+ local Wh
+@@ -448,13 +448,15 @@
+ 0 * 
+-#
++L(
+ Stop
++)
+ %0Aloc
+@@ -1028,16 +1028,25 @@
+ als%22, %7B%0A
++  L = L,%0A
+   White 

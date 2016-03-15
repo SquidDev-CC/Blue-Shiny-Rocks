@@ -1,5 +1,8 @@
-version = "0.7.0-1"
+added = {}
+patches = {}
+removed = {}
 source = {
-  url = "https://github.com/LuaDist/alt-getopt.git",
   branch = "master",
+  url = "https://github.com/LuaDist/alt-getopt.git",
 }
+version = "0.7.0-1"

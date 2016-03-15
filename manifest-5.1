@@ -1,20 +1,14 @@
+commands = {}
+modules = {}
 patches = {
   [ "alt-getopt" ] = "0.7.0-1",
-  penlight = "scm-1",
   busted = "2.0.rc11-0",
-  lua_cliargs = "2.5-5",
   ldoc = "1.4.4-1",
+  lua_cliargs = "2.5-5",
+  moonscript = "0.4.0-1",
+  penlight = "scm-1",
 }
-modules = {}
-commands = {}
 repository = {
-  [ "lua-term" ] = {
-    [ "0.3-1" ] = {
-      {
-        arch = "rockspec",
-      },
-    },
-  },
   dkjson = {
     [ "2.5-2" ] = {
       {
@@ -24,6 +18,13 @@ repository = {
   },
   lpeg = {
     [ "1.0.0-1" ] = {
+      {
+        arch = "rockspec",
+      },
+    },
+  },
+  [ "lua-term" ] = {
+    [ "0.3-1" ] = {
       {
         arch = "rockspec",
       },
