@@ -48,7 +48,7 @@ local fileMeta = {
 			if n == 0 then n = 1 end
 			for i = 1, n do
 				local format = data[i] or "l"
-				format = checkType(format, "string"):gsub("%*", "") -- "*" is not needed after Lua 5.1 - lets be friendly
+				format = checkType(format, "string"):gsub("%*", ""):sub(1, 1) -- "*" is not needed after Lua 5.1 - lets be friendly
 				if format == "l" then
 					returns[#returns + 1] = handle.readLine()
 				elseif format == "a" then
@@ -83,6 +83,8 @@ local fileMeta = {
 
 				handle.write(tostring(item))
 			end
+
+			return true
 		end,
 
 		lines = function(self, ...)

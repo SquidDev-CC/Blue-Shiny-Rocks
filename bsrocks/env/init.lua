@@ -13,9 +13,7 @@ local function addWithMeta(src, dest)
 	end
 end
 
-return function(options)
-	options = options or {}
-
+return function()
 	local nImplemented = function(name)
 		return function()
 			error(name .. " is not implemented", 2)
@@ -75,7 +73,7 @@ return function(options)
 
 	-- Customised loadfile function to work with relative files
 	function _G.loadfile(path)
-		path = fs.combine(env.dir, path)
+		path = env.resolve(path)
 		if fs.exists(path) then
 			return load(fileWrapper.read(path), path, "t", _G)
 		else
@@ -114,36 +112,40 @@ return function(options)
 		end
 		return result
 	end
-	local function extractError(...)
-		local success, message = ...
-		if success then
-			return ...
-		else
-			return false, getError(message)
-		end
-	end
 	env.getError = getError
 
-	function _G.error(message, level)
-		level = level or 1
-		if level > 0 then level = level + 1 end
-
-		if type(message) ~= "string" then
-			local key = tostring({}) .. tostring(message)
-			if message == nil then message = nilFiller end
-			errors[key] = message
-			error(key, 0)
-		else
-			error(message, level)
+	local e = {}
+	if select(2, pcall(error, e)) ~= e then
+		local function extractError(...)
+			local success, message = ...
+			if success then
+				return ...
+			else
+				return false, getError(message)
+			end
 		end
-	end
 
-	function _G.pcall(func, ...)
-		return extractError(pcall(func, ...))
-	end
+		function _G.error(message, level)
+			level = level or 1
+			if level > 0 then level = level + 1 end
 
-	function _G.xpcall(func, handler)
-		return xpcall(func, function(result) return handler(getError(result)) end)
+			if type(message) ~= "string" then
+				local key = tostring({}) .. tostring(message)
+				if message == nil then message = nilFiller end
+				errors[key] = message
+				error(key, 0)
+			else
+				error(message, level)
+			end
+		end
+
+		function _G.pcall(func, ...)
+			return extractError(pcall(func, ...))
+		end
+
+		function _G.xpcall(func, handler)
+			return xpcall(func, function(result) return handler(getError(result)) end)
+		end
 	end
 
 	-- Setup other items
@@ -152,14 +154,17 @@ return function(options)
 	require "bsrocks.env.io"(env)
 	require "bsrocks.env.os"(env)
 
-	if options.debug ~= false then
+	if not debug then
 		require "bsrocks.env.debug"(env)
+	else
+		_G.debug = debug
 	end
 
 	require "bsrocks.env.package"(env)
 
 	-- Copy functions across
 	addWithMeta(getfenv(), _G)
+	_G._NATIVE = getfenv()
 
 	return env
 end
