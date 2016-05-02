@@ -1,4 +1,6 @@
 local diff = require "bsrocks.lib.diffmatchpatch"
+local differ = require "bsrocks.lib.diff"
+local patch = require "bsrocks.lib.patch"
 local fileWrapper = require "bsrocks.lib.files"
 local manifest = require "bsrocks.rocks.manifest"
 local patchDirectory = require "bsrocks.lib.settings".patchDirectory
@@ -101,16 +103,15 @@ local function makePatches(original, changed)
 	for path, originalContents in pairs(original) do
 		local changedContents = changed[path]
 		if changedContents then
-			local diffs = diff.diff_main(originalContents, changedContents)
-			diff.diff_cleanupSemantic(diffs)
+			local diffs = differ(originalContents, changedContents)
 
 			os.queueEvent("diff")
 			coroutine.yield("diff")
 
-			local patch = diff.patch_toText(diff.patch_make(originalContents, diffs))
-			if #patch > 0 then
+			local patchData = patch.makePatch(diffs)
+			if #patchData > 0 then
 				patches[#patches + 1] = path
-				files[path .. ".patch"] = patch
+				files[path .. ".patch"] = patch.writePatch(patchData, path)
 			end
 
 			os.queueEvent("diff")

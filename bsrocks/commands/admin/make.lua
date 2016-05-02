@@ -34,15 +34,15 @@ local function execute(...)
 		fileWrapper.assertExists(info, "patchspec for " .. name, 0)
 
 		local data = serialize.unserialize(fileWrapper.read(info))
-		local originalSources = fileWrapper.readDir(original)
-		local changedSources = fileWrapper.readDir(changed)
+		local originalSources = fileWrapper.readDir(original, fileWrapper.readLines)
+		local changedSources = fileWrapper.readDir(changed, fileWrapper.readLines)
 
 		local files, patches, added, removed = patchspec.makePatches(originalSources, changedSources)
 		data.patches = patches
 		data.added = added
 		data.removed = removed
 
-		fileWrapper.writeDir(patch, files)
+		fileWrapper.writeDir(patch, files, fileWrapper.writeLines)
 		fileWrapper.write(info, serialize.serialize(data))
 	end
 end
