@@ -1,26 +1,27 @@
-@@ -2577,35 +2577,13 @@
- s = 
--utils.dir_separator == '%5C%5C'
-+false
- %0A%0Alo
-@@ -8903,165 +8903,61 @@
-     
--local home = getenv('HOME')%0A        if not home then -- has to be Windows%0A            home = getenv 'USERPROFILE' or (getenv 'HOMEDRIVE' .. getenv 'HOMEPATH'
-+if sub(P,2, 2) == %22/%22 then%0A            return sub(P,2
- )%0A  
-@@ -8967,32 +8967,38 @@
-    e
--nd%0A
-+lse%0A   
-         
-+ 
- return 
--home
-+%22/%22 
- ..
-+ 
- sub(
-@@ -8998,24 +8998,36 @@
- .. sub(P,2)%0A
-+        end%0A
-     else%0A   
+--- lua/pl/path.lua
++++ lua/pl/path.lua
+@@ -119,7 +119,7 @@
+     return sub(s,i,i)
+ end
+ 
+-path.is_windows = utils.dir_separator == '\\'
++path.is_windows = false
+ 
+ local other_sep
+ -- !constant sep is the directory separator for this platform.
+@@ -353,11 +353,11 @@
+ function path.expanduser(P)
+     assert_string(1,P)
+     if at(P,1) == '~' then
+-        local home = getenv('HOME')
+-        if not home then -- has to be Windows
+-            home = getenv 'USERPROFILE' or (getenv 'HOMEDRIVE' .. getenv 'HOMEPATH')
++        if sub(P,2, 2) == "/" then
++            return sub(P,2)
++        else
++            return "/" .. sub(P,2)
+         end
+-        return home..sub(P,2)
+     else
+         return P
+     end

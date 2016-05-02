@@ -1,16 +1,19 @@
-@@ -293,16 +293,35 @@
- te.gmt)%0A
-+  local names = %7B%7D%0A
-   for k,
-@@ -337,24 +337,77 @@
- , _G, nil do
-+ names%5Bk%5D = true end%0A  for k,_ in next, names, nil do
- %0A    rawset(
-@@ -427,24 +427,43 @@
- g%5Bk%5D)%0A  end%0A
-+  local names = %7B%7D%0A
-   for k,_ in
-@@ -487,16 +487,65 @@
- aded) do
-+ names%5Bk%5D = true end%0A  for k,_ in pairs(names) do
- %0A    pac
+--- busted/context.lua
++++ busted/context.lua
+@@ -14,10 +14,14 @@
+ 
+ local function restore(state)
+   setmetatable(_G, state.gmt)
+-  for k,_ in next, _G, nil do
++  local names = {}
++  for k,_ in next, _G, nil do names[k] = true end
++  for k,_ in next, names, nil do
+     rawset(_G, k, state.g[k])
+   end
+-  for k,_ in pairs(package.loaded) do
++  local names = {}
++  for k,_ in pairs(package.loaded) do names[k] = true end
++  for k,_ in pairs(names) do
+     package.loaded[k] = state.loaded[k]
+   end
+ end

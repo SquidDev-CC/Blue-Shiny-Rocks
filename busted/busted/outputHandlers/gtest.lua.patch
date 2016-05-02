@@ -1,38 +1,71 @@
-@@ -21,40 +21,8 @@
- ay'%0A
--local socket = require 'socket'%0A
- loca
-@@ -132,17 +132,16 @@
- .stdout)
-- 
- %0Alocal i
-@@ -5891,38 +5891,32 @@
- StartTime = 
--socket.gettime
-+os.clock
- ()%0A    if to
-@@ -6249,38 +6249,32 @@
- dTime_ms = (
--socket.gettime
-+os.clock
- () - suiteSt
-@@ -6650,38 +6650,32 @@
- StartTime = 
--socket.gettime
-+os.clock
- ()%0A    fileT
-@@ -6837,38 +6837,32 @@
- dTime_ms = (
--socket.gettime
-+os.clock
- () - fileSta
-@@ -7162,30 +7162,24 @@
- tTime = 
--socket.gettime
-+os.clock
- ()%0A    i
-@@ -7363,22 +7363,16 @@
-  = (
--socket.gettime
-+os.clock
- () -
+--- busted/outputHandlers/gtest.lua
++++ busted/outputHandlers/gtest.lua
+@@ -1,5 +1,4 @@
+ local s = require 'say'
+-local socket = require 'socket'
+ local pretty = require 'pl.pretty'
+ local term = require 'term'
+ 
+@@ -5,7 +4,7 @@
+ 
+ local colors
+ 
+-local isatty = term.isatty(io.stdout) 
++local isatty = term.isatty(io.stdout)
+ local isWindows = package.config:sub(1,1) == '\\'
+ 
+ if isWindows and not os.getenv("ANSICON") or not isatty then
+@@ -172,7 +171,7 @@
+   end
+ 
+   handler.suiteStart = function(suite, count, total, randomseed)
+-    suiteStartTime = socket.gettime()
++    suiteStartTime = os.clock()
+     if total > 1 then
+       io.write(repeatSuiteString:format(count, total))
+     end
+@@ -187,7 +186,7 @@
+   end
+ 
+   handler.suiteEnd = function(suite, count, total)
+-    local elapsedTime_ms = (socket.gettime() - suiteStartTime) * 1000
++    local elapsedTime_ms = (os.clock() - suiteStartTime) * 1000
+     local tests = (testCount == 1 and 'test' or 'tests')
+     local files = (fileCount == 1 and 'file' or 'files')
+     io.write(globalTeardown)
+@@ -199,7 +198,7 @@
+   end
+ 
+   handler.fileStart = function(file)
+-    fileStartTime = socket.gettime()
++    fileStartTime = os.clock()
+     fileTestCount = 0
+     io.write(fileStartString:format(file.name))
+     io.flush()
+@@ -207,7 +206,7 @@
+   end
+ 
+   handler.fileEnd = function(file)
+-    local elapsedTime_ms = (socket.gettime() - fileStartTime) * 1000
++    local elapsedTime_ms = (os.clock() - fileStartTime) * 1000
+     local tests = (fileTestCount == 1 and 'test' or 'tests')
+     fileCount = fileCount + 1
+     io.write(fileEndString:format(fileTestCount, tests, file.name, elapsedTime_ms))
+@@ -216,7 +215,7 @@
+   end
+ 
+   handler.testStart = function(element, parent)
+-    testStartTime = socket.gettime()
++    testStartTime = os.clock()
+     io.write(runString:format(getFullName(element)))
+     io.flush()
+ 
+@@ -224,7 +223,7 @@
+   end
+ 
+   handler.testEnd = function(element, parent, status, debug)
+-    local elapsedTime_ms = (socket.gettime() - testStartTime) * 1000
++    local elapsedTime_ms = (os.clock() - testStartTime) * 1000
+     local string
+ 
+     fileTestCount = fileTestCount + 1

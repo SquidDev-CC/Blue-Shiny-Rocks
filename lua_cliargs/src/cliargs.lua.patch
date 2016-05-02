@@ -1,8 +1,13 @@
-@@ -18646,16 +18646,36 @@
- e table%0A
-+    local keys = %7B%7D%0A
-     for 
-@@ -18691,24 +18691,74 @@
- airs(cli) do
-+ keys%5Bk%5D = true end%0A    for k, _ in pairs(keys) do
- %0A      cli%5Bk
+--- src/cliargs.lua
++++ src/cliargs.lua
+@@ -539,7 +539,9 @@
+       end
+     end
+     -- clear table in case user holds on to module table
+-    for k, _ in pairs(cli) do
++    local keys = {}
++    for k, _ in pairs(cli) do keys[k] = true end
++    for k, _ in pairs(keys) do
+       cli[k] = nil
+     end
+   end

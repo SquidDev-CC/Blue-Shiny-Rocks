@@ -1,20 +1,17 @@
-@@ -451,17 +451,20 @@
- .green('
--?
-+%5C183
- ')%0A  loc
-@@ -491,17 +491,20 @@
- rs.red('
--?
-+%5C143
- ')%0A  loc
-@@ -535,17 +535,18 @@
- agenta('
--?
-+%5C7
- ')%0A  loc
-@@ -576,17 +576,20 @@
- yellow('
--?
-+%5C186
- ')%0A%0A  lo
+--- busted/outputHandlers/utfTerminal.lua
++++ busted/outputHandlers/utfTerminal.lua
+@@ -14,10 +14,10 @@
+   local busted = require 'busted'
+   local handler = require 'busted.outputHandlers.base'()
+ 
+-  local successDot = colors.green('?')
+-  local failureDot = colors.red('?')
+-  local errorDot   = colors.magenta('?')
+-  local pendingDot = colors.yellow('?')
++  local successDot = colors.green('\183')
++  local failureDot = colors.red('\143')
++  local errorDot   = colors.magenta('\7')
++  local pendingDot = colors.yellow('\186')
+ 
+   local pendingDescription = function(pending)
+     local name = pending.name

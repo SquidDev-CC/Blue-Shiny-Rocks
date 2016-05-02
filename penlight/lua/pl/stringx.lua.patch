@@ -1,18 +1,31 @@
-@@ -8114,18 +8114,24 @@
- chrs = '
-+%5B%5C011
- %25s
-+%5D
- '%0A    el
-@@ -13229,17 +13229,16 @@
- n equals
-- 
- %0Aend%0A%0A--
-@@ -14418,18 +14418,16 @@
- racket =
--  
- %0A       
-@@ -14457,18 +14457,16 @@
-  .. %22%5B%22,
--  
- %0A       
+--- lua/pl/stringx.lua
++++ lua/pl/stringx.lua
+@@ -305,7 +305,7 @@
+ 
+ local function _strip(s,left,right,chrs)
+     if not chrs then
+-        chrs = '%s'
++        chrs = '[\011%s]'
+     else
+         chrs = '['..escape(chrs)..']'
+     end
+@@ -478,7 +478,7 @@
+         end
+     until not new_equals
+ 
+-    return equals 
++    return equals
+ end
+ 
+ --- Quote the given string and preserve any control or escape characters, such that reloading the string in Lua returns the same result.
+@@ -499,8 +499,8 @@
+         equal_signs = ("="):rep((equal_signs or -1) + 1)
+         -- Long strings strip out leading newline. We want to retain that, when quoting.
+         if s:find("^\n") then s = "\n" .. s end
+-        local lbracket, rbracket =  
+-            "[" .. equal_signs .. "[",  
++        local lbracket, rbracket =
++            "[" .. equal_signs .. "[",
+             "]" .. equal_signs .. "]"
+         s = lbracket .. s .. rbracket
+     else

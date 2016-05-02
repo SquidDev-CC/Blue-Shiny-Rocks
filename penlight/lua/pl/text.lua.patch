@@ -1,9 +1,19 @@
-@@ -5937,17 +5937,16 @@
- rator()%0A
--%0A
-     loca
-@@ -6764,27 +6764,21 @@
-     
--getmetatable(%22%22).__
-+string.format
- mod 
+--- lua/pl/text.lua
++++ lua/pl/text.lua
+@@ -198,7 +198,6 @@
+ -- (see <a href="http://lua-users.org/wiki/StringInterpolation">the lua-users wiki</a>) --
+ 
+ function text.format_operator()
+-
+     local format = string.format
+ 
+     -- a more forgiving version of string.format, which applies
+@@ -225,7 +224,7 @@
+     -- 3. a map of var=value pairs
+     -- 4. a function, as in gsub
+     -- For the second two cases, it uses $-variable substituion.
+-    getmetatable("").__mod = function(a, b)
++    string.formatmod = function(a, b)
+         if b == nil then
+             return a
+         elseif type(b) == "table" and getmetatable(b) == nil then

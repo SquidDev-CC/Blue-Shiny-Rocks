@@ -1,5 +1,11 @@
-@@ -16991,18 +16991,17 @@
- ur') or 
--12
-+0
- %0A    if 
+--- lua/pl/Date.lua
++++ lua/pl/Date.lua
+@@ -609,7 +609,7 @@
+     if year < 100 then -- two-digit year pivot around year < 2035
+         year = year + (year < 35 and 2000 or 1900)
+     end
+-    hour = hour and tonum(hour,0,apm and 12 or 24,'hour') or 12
++    hour = hour and tonum(hour,0,apm and 12 or 24,'hour') or 0
+     if apm == 'pm' then
+         hour = hour + 12
+     end

@@ -1,4 +1,11 @@
-@@ -5931,16 +5931,52 @@
- ,res)%5Cn%5C
-+tif s == %22%22 then return false end%5Cn%5C
- tlocal %25
+--- lua/pl/sip.lua
++++ lua/pl/sip.lua
+@@ -196,7 +196,7 @@
+         append(ls,'mm'..i)
+     end
+     ls[1] = ls[1] or "mm1" -- behave correctly if there are no patterns
+-    local fun = ('return (function(s,res)\n\tlocal %s = s:match(%q)\n'):format(concat(ls,','),spec)
++    local fun = ('return (function(s,res)\n\tif s == "" then return false end\n\tlocal %s = s:match(%q)\n'):format(concat(ls,','),spec)
+     fun = fun..'\tif not mm1 then return false end\n'
+     local k=1
+     for i,f in ipairs(fieldnames) do
