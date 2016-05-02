@@ -1,13 +1,13 @@
 --- busted/outputHandlers/utfTerminal.lua
 +++ busted/outputHandlers/utfTerminal.lua
-@@ -14,10 +14,10 @@
+@@ -14,15 +14,15 @@
    local busted = require 'busted'
    local handler = require 'busted.outputHandlers.base'()
  
--  local successDot = colors.green('?')
--  local failureDot = colors.red('?')
--  local errorDot   = colors.magenta('?')
--  local pendingDot = colors.yellow('?')
+-  local successDot = colors.green('●')
+-  local failureDot = colors.red('◼')
+-  local errorDot   = colors.magenta('✱')
+-  local pendingDot = colors.yellow('◌')
 +  local successDot = colors.green('\183')
 +  local failureDot = colors.red('\143')
 +  local errorDot   = colors.magenta('\7')
@@ -15,3 +15,21 @@
  
    local pendingDescription = function(pending)
      local name = pending.name
+ 
+-    local string = colors.yellow(s('output.pending')) .. ' → ' ..
++    local string = colors.yellow(s('output.pending')) .. ' \26 ' ..
+       colors.cyan(pending.trace.short_src) .. ' @ ' ..
+       colors.cyan(pending.trace.currentline)  ..
+       '\n' .. colors.bright(name)
+@@ -50,9 +50,9 @@
+   end
+ 
+   local failureDescription = function(failure, isError)
+-    local string = colors.red(s('output.failure')) .. ' → '
++    local string = colors.red(s('output.failure')) .. ' \26 '
+     if isError then
+-      string = colors.magenta(s('output.error')) .. ' → '
++      string = colors.magenta(s('output.error')) .. ' \26 '
+     end
+ 
+     if not failure.element.trace or not failure.element.trace.short_src then
