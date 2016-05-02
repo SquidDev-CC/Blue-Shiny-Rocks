@@ -202,8 +202,8 @@ local function applyPatch(patch, lines, file)
 			elseif mode == "-" then
 				if line ~= lines[oLine] then
 					-- TODO: Diff the texts, compute difference, etc...
-					print(("%q"):format(line))
-					print(("%q"):format(lines[oLine]))
+					-- print(("%q"):format(line))
+					-- print(("%q"):format(lines[oLine]))
 					-- return false, "line #" .. oLine .. " does not exist"
 				end
 				oLine = oLine + 1

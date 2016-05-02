@@ -52,7 +52,7 @@ local function execute(...)
 			if not downloaded then error("Cannot find downloader for " .. rock.source.url, 0) end
 
 			for name, contents in pairs(downloaded) do
-				fileWrapper.write(fs.combine(dir, name), contents)
+				fileWrapper.writeLines(fs.combine(dir, name), contents)
 			end
 
 			fs.delete(fs.combine(patchDirectory, "rocks-changes/" .. name))
