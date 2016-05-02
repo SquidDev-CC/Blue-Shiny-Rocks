@@ -40,7 +40,14 @@ local function tree(prefix, files)
 
 			if f then
 				count = count + 1
-				result[path] = f.readAll()
+
+				local out, n = {}, 0
+				for line in f.readLine do
+					n = n + 1
+					out[n] = line
+				end
+				result[path] = out
+				f.close()
 				callback(true, path, count, total)
 				return
 			elseif errored then

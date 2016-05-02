@@ -9,6 +9,9 @@ local function execute(...)
 	if select("#", ...) == 0 then
 		force = false
 		patched = patchspec.getAll()
+	elseif select("#", ...) == 1 and (... == "-f"  or ... == "--force") then
+		force = true
+		patched = patchspec.getAll()
 	else
 		force = true
 		patched = {}
@@ -34,16 +37,16 @@ local function execute(...)
 			fileWrapper.assertExists(original, "original sources for " .. name, 0)
 			fs.delete(changed)
 
-			local originalSources = fileWrapper.readDir(original)
+			local originalSources = fileWrapper.readDir(original, fileWrapper.readLines)
 			local replaceSources = {}
-			if fs.exists(patch) then replaceSources = fileWrapper.readDir(patch) end
+			if fs.exists(patch) then replaceSources = fileWrapper.readDir(patch, fileWrapper.readLines) end
 
 			local changedSources = patchspec.applyPatches(
 				originalSources, replaceSources,
 				data.patches or {}, data.added or {}, data.removed or {}
 			)
 
-			fileWrapper.writeDir(changed, changedSources)
+			fileWrapper.writeDir(changed, changedSources, fileWrapper.writeLines)
 		end
 	end
 

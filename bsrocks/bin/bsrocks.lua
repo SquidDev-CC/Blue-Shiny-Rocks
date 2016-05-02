@@ -38,7 +38,7 @@ local function getCommand(command)
 	if not foundCommand then
 		-- No such command, print a list of suggestions
 		printError("Cannot find '" .. command .. "'.")
-		local match = require "bsrocks.lib.diffmatchpatch".match_main
+		local match = require "bsrocks.lib.match"
 
 		local printDid = false
 		for cmd, _ in pairs(commands) do

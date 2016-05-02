@@ -17,7 +17,18 @@ local function makePatch(diff)
 			nLine = nLine + #lines
 
 			if current then
-				local change = math.min(context, #lines)
+				local change
+				local finish = false
+				if #lines > context + CONTEXT_THRESHOLD then
+					-- We're not going to merge into the next group
+					-- so just write the remaining items
+					change = context
+					finish = true
+				else
+					-- We'll merge into another group, so write everything
+					change = #lines
+				end
+
 				for i = 1, change do
 					cn = cn + 1
 					current[cn] = { mode, lines[i] }
@@ -26,7 +37,7 @@ local function makePatch(diff)
 				current.oCount = current.oCount + change
 				current.nCount = current.nCount + change
 
-				if #lines > context then
+				if finish then
 					-- We've finished this run, and there is more remaining, so
 					-- we shouldn't continue this patch
 					context = 0
@@ -108,6 +119,7 @@ local function writePatch(patch, name)
 			if mode == "=" then mode = " " end
 
 			n = n + 1
+
 			out[n] = mode .. row[2]
 		end
 	end
@@ -115,7 +127,105 @@ local function writePatch(patch, name)
 	return out
 end
 
+local function readPatch(lines)
+	if lines[1]:sub(1, 3) ~= "---" then error("Invalid patch format on line #1") end
+	if lines[2]:sub(1, 3) ~= "+++" then error("Invalid patch format on line #2") end
+
+	local out, n = {}, 0
+	local current, cn = nil, 0
+
+	for i = 3, #lines do
+		local line = lines[i]
+		if line:sub(1, 2) == "@@" then
+			local oLine, oCount, nLine, nCount = line:match("^@@ %-(%d+),(%d+) %+(%d+),(%d+) @@$")
+			if not oLine then error("Invalid block on line #" .. i .. ": " .. line) end
+
+			current = {
+				oLine = oLine,
+				oCount = oCount,
+				nLine = nLine,
+				nCount = nCount,
+			}
+			cn = 0
+
+			n = n + 1
+			out[n] = current
+		else
+			local mode = line:sub(1, 1)
+			local data = line:sub(2)
+
+			if mode == " " or mode == "" then
+				-- Allow empty lines (when whitespace has been stripped)
+				mode = "="
+			elseif mode ~= "+" and mode ~= "-" then
+				error("Invalid mode on line #" .. i .. ": " .. line)
+			end
+
+			cn = cn + 1
+			if not current then error("No block for line #" .. i) end
+
+			current[cn] = { mode, data }
+		end
+	end
+
+	return out
+end
+
+local function applyPatch(patch, lines, file)
+	local out, n = {}, 0
+
+	local oLine = 1
+	for i = 1, #patch do
+		local data = patch[i]
+
+		for i = oLine, data.oLine - 1 do
+			n = n + 1
+			out[n] = lines[i]
+			oLine = oLine + 1
+		end
+
+		if oLine ~= data.oLine and oLine + 0 ~= data.oLine + 0 then
+			return false, "Incorrect lines. Expected: " .. data.oLine .. ", got " .. oLine .. ". This may be caused by overlapping patches."
+		end
+
+		for i = 1, #data do
+			local mode, line = data[i][1], data[i][2]
+
+			if mode == "=" then
+				if line ~= lines[oLine] then
+					return false, "line #" .. oLine .. " is not equal."
+				end
+
+				n = n + 1
+				out[n] = line
+				oLine = oLine + 1
+			elseif mode == "-" then
+				if line ~= lines[oLine] then
+					-- TODO: Diff the texts, compute difference, etc...
+					print(("%q"):format(line))
+					print(("%q"):format(lines[oLine]))
+					-- return false, "line #" .. oLine .. " does not exist"
+				end
+				oLine = oLine + 1
+			elseif mode == "+" then
+				n = n + 1
+				out[n] = line
+			end
+		end
+	end
+
+	for i = oLine, #lines do
+		n = n + 1
+		out[n] = lines[i]
+	end
+
+	return out
+end
+
 return {
 	makePatch = makePatch,
+	applyPatch = applyPatch,
+
 	writePatch = writePatch,
+	readPatch = readPatch,
 }

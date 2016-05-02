@@ -1,8 +1,7 @@
-local diff = require "bsrocks.lib.diffmatchpatch"
-local differ = require "bsrocks.lib.diff"
-local patch = require "bsrocks.lib.patch"
+local diff = require "bsrocks.lib.diff"
 local fileWrapper = require "bsrocks.lib.files"
 local manifest = require "bsrocks.rocks.manifest"
+local patch = require "bsrocks.lib.patch"
 local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 local unserialize = require "bsrocks.lib.serialize".unserialize
 local utils = require "bsrocks.lib.utils"
@@ -103,7 +102,7 @@ local function makePatches(original, changed)
 	for path, originalContents in pairs(original) do
 		local changedContents = changed[path]
 		if changedContents then
-			local diffs = differ(originalContents, changedContents)
+			local diffs = diff(originalContents, changedContents)
 
 			os.queueEvent("diff")
 			coroutine.yield("diff")
@@ -149,18 +148,16 @@ local function applyPatches(original, files, patches, added, removed)
 		if not patchContents then error("Cannot find patch " .. file .. ".patch") end
 		if not originalContents then error("Cannot find original " .. file) end
 
-		local patches = diff.patch_fromText(patchContents)
-		local changedContent, success = diff.patch_apply(patches, originalContents)
+		local patches = patch.readPatch(patchContents)
+		local success, message = patch.applyPatch(patches, originalContents, file)
 
-		for k, v in pairs(success) do
-			if not v then
-				warn("Cannot apply #" .. k .. " for " .. file)
-				issues = true
-			end
+		if not success then
+			warn("Cannot apply " .. file .. ": " .. message)
+			issues = true
+		else
+			changed[file] = success
+			modified[file] = true
 		end
-
-		changed[file] = changedContent
-		modified[file] = true
 
 		os.queueEvent("diff")
 		coroutine.yield("diff")

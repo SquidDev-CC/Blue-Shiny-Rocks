@@ -1,4 +1,4 @@
-local match = require "bsrocks.lib.diffmatchpatch".match_main
+local match = require "bsrocks.lib.match"
 local rockspec = require "bsrocks.rocks.rockspec"
 local manifest = require "bsrocks.rocks.manifest"
 
