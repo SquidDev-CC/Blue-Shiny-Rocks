@@ -1,6 +1,6 @@
 --- lua/pl/dir.lua
 +++ lua/pl/dir.lua
-@@ -107,95 +107,6 @@
+@@ -107,134 +107,15 @@
      return _listfiles(dir,false)
  end
  
@@ -94,9 +94,6 @@
 -end
 -
  local function file_op (is_copy,src,dest,flag)
-     if flag == 1 and path.exists(dest) then
-         return false,"cannot overwrite destination"
-@@ -200,41 +111,11 @@
      if flag == 1 and path.exists(dest) then
          return false,"cannot overwrite destination"
      end

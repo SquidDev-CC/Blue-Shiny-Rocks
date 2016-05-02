@@ -1,12 +1,10 @@
 --- busted/outputHandlers/gtest.lua
 +++ busted/outputHandlers/gtest.lua
-@@ -1,5 +1,4 @@
+@@ -1,11 +1,10 @@
  local s = require 'say'
 -local socket = require 'socket'
  local pretty = require 'pl.pretty'
  local term = require 'term'
- 
-@@ -5,7 +4,7 @@
  
  local colors
  
