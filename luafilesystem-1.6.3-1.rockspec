@@ -5,7 +5,7 @@ dependencies = {
 }
 build = {
   modules = {
-    cliargs = "lib/lfs.lua",
+    lfs = "lib/lfs.lua",
   },
   type = "builtin",
 }
