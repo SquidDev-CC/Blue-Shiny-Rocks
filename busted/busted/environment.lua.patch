@@ -1,0 +1,19 @@
+--- busted/environment.lua
++++ busted/environment.lua
+@@ -4,12 +4,15 @@
+ 
+   local environment = {}
+ 
++  local defaultEnv = _G
++  function environment.setDefault(env) defaultEnv = env end
++
+   local function getEnv(self, key)
+     if not self then return nil end
+     return
+       self.env and self.env[key] or
+       getEnv(context.parent(self), key) or
+-      _G[key]
++      defaultEnv[key]
+   end
+ 
+   local function setEnv(self, key, value)

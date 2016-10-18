@@ -1,0 +1,11 @@
+--- busted/core.lua
++++ busted/core.lua
+@@ -50,6 +50,8 @@
+   busted.context = root.ref()
+ 
+   local environment = require 'busted.environment'(busted.context)
++
++  busted.setDefaultEnvironment = environment.setDefault
+ 
+   busted.api = {}
+   busted.executors = {}

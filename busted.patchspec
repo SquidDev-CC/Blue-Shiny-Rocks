@@ -11,8 +11,10 @@ dependencies = {
   "mediator_lua >= 1.1.1-0",
 }
 patches = {
+  "busted/core.lua",
   "busted/outputHandlers/gtest.lua",
   "busted/outputHandlers/base.lua",
+  "busted/environment.lua",
   "busted/outputHandlers/utfTerminal.lua",
   "busted/context.lua",
 }

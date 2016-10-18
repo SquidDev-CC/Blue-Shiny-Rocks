@@ -1,7 +1,7 @@
 added = {}
 patches = {
-  "lua/pl/stringx.lua",
   "lua/pl/dir.lua",
+  "lua/pl/stringx.lua",
   "lua/pl/path.lua",
   "lua/pl/text.lua",
   "lua/pl/sip.lua",
