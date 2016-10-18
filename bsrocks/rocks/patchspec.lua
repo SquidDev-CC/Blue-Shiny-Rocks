@@ -6,7 +6,7 @@ local patchDirectory = require "bsrocks.lib.settings".patchDirectory
 local unserialize = require "bsrocks.lib.serialize".unserialize
 local utils = require "bsrocks.lib.utils"
 
-local log, warn = utils.log, utils.warn
+local log, warn, verbose, error = utils.log, utils.warn, utils.verbose, utils.error
 
 local patchCache = {}
 
@@ -25,6 +25,7 @@ local function fetchPatchspec(server, name)
 	if result then return result end
 
 	log("Fetching patchspec " .. name)
+	verbose("Using '" .. server .. name .. ".patchspec' for " .. name)
 
 	local handle = http.get(server .. name .. '.patchspec')
 	if not handle then
@@ -148,6 +149,7 @@ local function applyPatches(original, files, patches, added, removed)
 		if not patchContents then error("Cannot find patch " .. file .. ".patch") end
 		if not originalContents then error("Cannot find original " .. file) end
 
+		verbose("Applying patch to " .. file)
 		local patches = patch.readPatch(patchContents)
 		local success, message = patch.applyPatch(patches, originalContents, file)
 

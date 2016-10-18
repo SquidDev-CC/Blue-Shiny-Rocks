@@ -1,8 +1,10 @@
 local dependencies = require "bsrocks.rocks.dependencies"
 local fileWrapper = require "bsrocks.lib.files"
-local log = require "bsrocks.lib.utils".log
 local manifest = require "bsrocks.rocks.manifest"
 local unserialize = require "bsrocks.lib.serialize".unserialize
+local utils = require "bsrocks.lib.utils"
+
+local log, warn, verbose, error = utils.log, utils.warn, utils.verbose, utils.error
 
 local rockCache = {}
 
@@ -46,6 +48,7 @@ local function fetchRockspec(server, name, version)
 	if rockspec then return rockspec end
 
 	log("Fetching rockspec " .. whole)
+	verbose("Using '" .. server .. name .. '-' .. version .. ".rockspec' for " .. whole)
 
 	local handle = http.get(server .. name .. '-' .. version .. '.rockspec')
 	if not handle then

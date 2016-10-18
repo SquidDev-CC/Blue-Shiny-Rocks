@@ -74,6 +74,10 @@ local function doLog(msg)
 	handle.close()
 end
 
+local function verbose(msg)
+	doLog("[VERBOSE] " .. msg)
+end
+
 local function log(msg)
 	doLog("[LOG] " .. msg)
 	printColoured(msg, colours.lightGrey)
@@ -82,6 +86,16 @@ end
 local function warn(msg)
 	doLog("[WARN] " .. msg)
 	printColoured(msg, colours.yellow)
+end
+
+local nativeError = error
+local function error(msg, level)
+	doLog("[ERROR] " .. msg)
+
+	if level == nil then level = 2
+	elseif level ~= 0 then level = level + 1 end
+
+	nativeError(msg, level)
 end
 
 local matches = {
@@ -175,5 +189,7 @@ return {
 	printIndent = printIndent,
 	tmpName = tmpName,
 	traceback = traceback,
-	warn = warn
+	warn = warn,
+	verbose = verbose,
+	error = error,
 }

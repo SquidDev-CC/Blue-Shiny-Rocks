@@ -9,7 +9,7 @@ local tree = require "bsrocks.downloaders.tree"
 local utils = require "bsrocks.lib.utils"
 
 local installDirectory = settings.installDirectory
-local log, warn = utils.log, utils.warn
+local log, warn, verbose, error = utils.log, utils.warn, utils.verbose, utils.error
 
 local fetched = false
 local installed = {}
@@ -94,6 +94,7 @@ local function save(rockS, patchS)
 		if build.modules then
 			local moduleDir = fs.combine(installDirectory, "lib")
 			for module, file in pairs(build.modules) do
+				verbose("Writing module " .. module)
 				fileWrapper.writeLines(fs.combine(moduleDir, module:gsub("%.", "/") .. ".lua"), downloaded[file])
 			end
 		end
@@ -103,6 +104,7 @@ local function save(rockS, patchS)
 			for name, install in pairs(build.install) do
 				local dir = fs.combine(installDirectory, name)
 				for name, file in pairs(install) do
+					verbose("Writing " .. name .. " to " .. dir)
 					if type(name) == "number" and name >= 1 and name <= #install then
 						name = file
 					end
@@ -180,12 +182,13 @@ end
 
 local function install(name, version, constraints)
 	name = name:lower()
+	verbose("Preparing to install " .. name .. " " .. (version or ""))
 
 	-- Do the cheapest action ASAP
 	local installed = getInstalled()
 	local current = installed[name]
 	if current and ((version == nil and constraints == nil) or current.version == version) then
-		error("Already installed", 0)
+		error(name .. " already installed", 0)
 	end
 
 	local rockManifest = rockspec.findRockspec(name)
@@ -205,7 +208,7 @@ local function install(name, version, constraints)
 	end
 
 	if current and current.version == version then
-		error("Already installed", 0)
+		error(name .. " already installed", 0)
 	end
 
 	local patchspec = patchManifest and patchspec.fetchPatchspec(patchManifest.server, name)

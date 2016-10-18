@@ -1,3 +1,4 @@
+local error = require "bsrocks.lib.utils".error
 local tree = require "bsrocks.downloaders.tree"
 
 local downloaders = {

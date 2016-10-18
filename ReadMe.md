@@ -27,8 +27,7 @@ The LuaRocks implementation is very minimal:
  - Only pure Lua libraries are supported
 
 ## Getting started
- - First install with Howl's webbuild: `pastebin run RcfW98XL SquidDev-CC/Blue-Shiny-Rocks -t build --once`
- - Grab either `build/bsrocks.lua` or `build/bsrocks.min.lua`. We'll call this file `bsrocks`.
+ - First install from the Gist: `pastebin run LYAxmSby get 6ced21eb437a776444aacef4d597c0f7/bsrocks.min.lua bsrocks`
  - Look for a package: `bsrocks search colours`
  - Check it is the one you want: `bsrocks desc ansicolors`
  - Install it: `bsrocks install ansicolors`

@@ -1,3 +1,5 @@
+local error = require "bsrocks.lib.utils".error
+
 local function callback(success, path, count, total)
 	if not success then
 		local x, y = term.getCursorPos()
