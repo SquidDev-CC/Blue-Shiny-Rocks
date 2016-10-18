@@ -1,11 +1,30 @@
 --- busted/core.lua
 +++ busted/core.lua
-@@ -50,6 +50,8 @@
-   busted.context = root.ref()
+@@ -3,7 +3,6 @@
+ local unpack = require 'busted.compatibility'.unpack
+ local path = require 'pl.path'
+ local pretty = require 'pl.pretty'
+-local system = require 'system'
+ local throw = error
+ 
+ local failureMt = {
+@@ -52,14 +51,16 @@
  
    local environment = require 'busted.environment'(busted.context)
-+
-+  busted.setDefaultEnvironment = environment.setDefault
  
++  busted.setDefaultEnvironment = environment.setDefault
++
    busted.api = {}
    busted.executors = {}
+   local executors = {}
+   local eattributes = {}
+ 
+-  busted.gettime = system.gettime
+-  busted.monotime = system.monotime
+-  busted.sleep = system.sleep
++  busted.gettime = os.clock
++  busted.monotime = os.clock
++  busted.sleep = _NATIVE.os.sleep
+   busted.status = require 'busted.status'
+ 
+   function busted.getTrace(element, level, msg)

@@ -12,11 +12,9 @@ dependencies = {
 }
 patches = {
   "busted/core.lua",
-  "busted/outputHandlers/gtest.lua",
-  "busted/outputHandlers/base.lua",
   "busted/environment.lua",
   "busted/outputHandlers/utfTerminal.lua",
   "busted/context.lua",
 }
 removed = {}
-version = "2.0.rc11-0"
+version = "2.0.rc12-1"
