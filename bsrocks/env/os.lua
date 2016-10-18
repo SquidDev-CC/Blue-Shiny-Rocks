@@ -8,8 +8,14 @@ local checkType = utils.checkType
 return function(env)
 	local os, shell = os, shell
 	local temp = {}
+
+	local clock = os.clock
+	if profiler and profiler.milliTime then
+		clock = function() return profiler.milliTime() * 1e-3 end
+	end
+
 	env._G.os = {
-		clock = os.clock,
+		clock = clock,
 		date = function(format, time)
 			format = checkType(format or "%c", "string")
 			time = checkType(time or os.time(), "number")

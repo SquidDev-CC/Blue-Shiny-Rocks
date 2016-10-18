@@ -29,7 +29,7 @@ return function()
 		_VERSION = _VERSION
 	}
 	_G._G = _G
-	_G._ENV = _ENV
+	_G._ENV = _G
 
 	local env = {
 		_G = _G,
@@ -163,8 +163,8 @@ return function()
 	require "bsrocks.env.package"(env)
 
 	-- Copy functions across
-	addWithMeta(getfenv(), _G)
-	_G._NATIVE = getfenv()
+	addWithMeta(_ENV, _G)
+	_G._NATIVE = _ENV
 
 	return env
 end
