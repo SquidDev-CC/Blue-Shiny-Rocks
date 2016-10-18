@@ -1,6 +1,0 @@
-added = {}
-patches = {
-  "src/cliargs.lua",
-}
-removed = {}
-version = "2.5-5"
