@@ -2,7 +2,7 @@ preload['bsrocks.env'] = function()
 	return function()
 		return {
 			cleanup = {},
-			_G = setmetatable({}, {__index = getfenv()})
+			_G = setmetatable({}, {__index = _ENV})
 		}
 	end
 end

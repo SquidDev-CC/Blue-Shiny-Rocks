@@ -1,8 +1,6 @@
 local function unserialize(text)
-	local func = assert(loadstring(text, "unserialize"))
-
 	local table = {}
-	setfenv(func, table)()
+	assert(load(text, "unserialize", nil, table))()
 	return table
 end
 

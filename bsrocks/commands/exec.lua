@@ -35,13 +35,12 @@ return {
 			file = shell.resolve(file)
 		end
 
-		local loaded, msg = loadfile(file)
-		if not loaded then error(msg, 0) end
-
 		local env = env()
 		local thisEnv = env._G
 		thisEnv.arg = {[-2] = "/" .. shell.getRunningProgram(), [-1] = "exec", [0] = "/" .. file, ... }
-		setfenv(loaded, thisEnv)
+
+		local loaded, msg = loadfile(file, thisEnv)
+		if not loaded then error(msg, 0) end
 
 		local args = {...}
 		local success, msg = xpcall(

@@ -63,12 +63,7 @@ return function()
 
 	-- Need to set environment
 	function _G.loadstring(name, chunk)
-		local result, message = loadstring(name, chunk)
-		if result then
-			return setfenv(result, _G)
-		end
-
-		return result, message
+		return load(name, chunk, nil, _G)
 	end
 
 	-- Customised loadfile function to work with relative files
