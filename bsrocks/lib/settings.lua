@@ -3,7 +3,7 @@ local currentSettings = {
 	installDirectory = "/rocks",
 	servers = {
 		'https://raw.githubusercontent.com/SquidDev-CC/Blue-Shiny-Rocks/rocks/',
-		'http://luarocks.org/repositories/rocks/',
+		'http://luarocks.org/',
 	},
 	tries = 3,
 	existing = {

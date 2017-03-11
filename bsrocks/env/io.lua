@@ -49,15 +49,20 @@ local fileMeta = {
 			for i = 1, n do
 				local format = data[i] or "l"
 				format = checkType(format, "string"):gsub("%*", ""):sub(1, 1) -- "*" is not needed after Lua 5.1 - lets be friendly
+
+				local res, msg
 				if format == "l" then
-					returns[#returns + 1] = handle.readLine()
+					res, msg = handle.readLine()
 				elseif format == "a" then
-					returns[#returns + 1] = handle.readAll()
+					res, msg = handle.readAll()
 				elseif format == "r" then
-					returns[#returns + 1] = handle.read() -- Binary only
+					res, msg = handle.read() -- Binary only
 				else
 					error("(invalid format", 2)
 				end
+
+				if not res then return res, msg end
+				returns[#returns + 1] = res
 			end
 
 			return unpack(returns)
@@ -109,24 +114,24 @@ return function(env)
 	end
 
 	do -- Setup standard outputs
-		local function void() end
-		local function close() return nil, "cannot close standard file" end
-		local function read() return nil, "bad file descriptor" end
+		local function voidStub() end
+		local function closeStub() return nil, "cannot close standard file" end
+		local function readStub() return nil, "bad file descriptor" end
 
 		env.stdout = setmetatable({
 			__handle = {
-				close = close,
-				flush = void,
-				read = read, readLine = read, readAll = read,
+				close = closeStub,
+				flush = voidStub,
+				read = readStub, readLine = readStub, readAll = readStub,
 				write = function(arg) ansi.write(arg) end,
 			}
 		}, fileMeta)
 
 		env.stderr = setmetatable({
 			__handle = {
-				close = close,
-				flush = void,
-				read = read, readLine = read, readAll = read,
+				close = closeStub,
+				flush = voidStub,
+				read = readStub, readLine = readStub, readAll = readStub,
 				write = function(arg)
 					local c = term.isColor()
 					if c then term.setTextColor(colors.red) end
@@ -138,8 +143,8 @@ return function(env)
 
 		env.stdin = setmetatable({
 			__handle = {
-				close = close,
-				flush = void,
+				close = closeStub,
+				flush = voidStub,
 				read = function() return string.byte(os.pullEvent("char")) end,
 				readLine = read, readAll = read,
 				write = function() error("cannot write to input", 3) end,
