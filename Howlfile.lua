@@ -64,7 +64,7 @@ Tasks:Default "build"
 Tasks:Task "upload" {"upload:core", "upload:repl"} :description "Uploads all the files"
 
 Tasks:gist "upload:core" (function(spec)
-	spec:summary "Vanilla Lua emulation and package manager (http://www.computercraft.info/forums2/index.php?/topic/26032- and https://github.com/SquidDev-CC/Blue-Shiny-Rokcs)"
+	spec:summary "Vanilla Lua emulation and package manager (http://www.computercraft.info/forums2/index.php?/topic/26032- and https://github.com/SquidDev-CC/Blue-Shiny-Rocks)"
 	spec:gist "6ced21eb437a776444aacef4d597c0f7"
 	spec:from "build" {
 		include = { "bsrocks.lua", "bsrocks.min.lua" }
@@ -72,7 +72,7 @@ Tasks:gist "upload:core" (function(spec)
 end) :Requires { "build/bsrocks.lua", "build/bsrocks.min.lua" }
 
 Tasks:gist "upload:repl" (function(spec)
-	spec:summary "A fancy Lua REPL (originally from Blue-Shiny-Rocks: http://www.computercraft.info/forums2/index.php?/topic/26032- and https://github.com/SquidDev-CC/Blue-Shiny-Rokcs)"
+	spec:summary "A fancy Lua REPL (originally from Blue-Shiny-Rocks: http://www.computercraft.info/forums2/index.php?/topic/26032- and https://github.com/SquidDev-CC/Blue-Shiny-Rocks)"
 	spec:gist "e204ea9b6032dabf0cba3f57893125ba"
 	spec:from "build" {
 		include = { "repl.lua", "repl.min.lua" }
