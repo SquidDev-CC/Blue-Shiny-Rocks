@@ -1,6 +1,7 @@
 local function unserialize(text)
 	local table = {}
-	assert(load(text, "unserialize", nil, table))()
+	assert(load(text, "unserialize", "t", table))()
+	table._ENV = nil
 	return table
 end
 

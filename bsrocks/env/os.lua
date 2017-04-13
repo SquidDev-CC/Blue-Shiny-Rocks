@@ -7,6 +7,7 @@ local checkType = utils.checkType
 
 return function(env)
 	local os, shell = os, shell
+	local envVars = {}
 	local temp = {}
 
 	local clock = os.clock
@@ -48,11 +49,19 @@ return function(env)
 			end
 		end,
 		exit  = function(code) error("Exit code: " .. (code or 0), 0) end,
-		getfenv = function(name)
+		getenv = function(name)
 			-- I <3 ClamShell
 			if shell.getenv then
-				return shell.getenv(name)
+				local val = shell.getenv(name)
+				if val ~= nil then return val end
 			end
+
+			if settings and settings.get then
+				local val = settings.get(name)
+				if val ~= nil then return val end
+			end
+
+			return envVars[name]
 		end,
 
 		remove = function(path)
